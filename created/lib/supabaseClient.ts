@@ -1,13 +1,9 @@
-import { supabase } from "./supabase";
+import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@supabase/supabase-js";
 
-export async function createSurvey(payload: {
-  id: string;
-  user_id: string;
-  question: string;
-  type: string;
-  options: string[] | null;
-}) {
-  const { error } = await supabase.from("surveys").insert(payload);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!;
 
-  if (error) throw error;
-}
+export const createSupaClient = () => {return createClient(supabaseUrl, supabaseKey, {async accessToken() {
+    return ((await auth()).getToken())
+}})};

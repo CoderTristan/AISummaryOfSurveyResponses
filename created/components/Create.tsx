@@ -1,16 +1,20 @@
 'use client'
 
 import { useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { createSurvey } from "@/lib/supabaseClient"
-import {supabase} from "@/lib/supabase"
+import { createSurvey, getSurveys } from "@/lib/supabaseSurveys";
+import { useParams, useRouter } from "next/navigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { CardHeader, CardTitle, CardContent, Card } from "./ui/card";
+import { Label} from "./ui/label";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Button } from "./ui/button";
+
 
 export default function CreateSurveyPage() {
+  const router = useRouter();
+   const {projectId} = useParams()
+  
   const [question, setQuestion] = useState("")
   const [type, setType] = useState("yesno")
   const [options, setOptions] = useState("")
@@ -19,31 +23,32 @@ export default function CreateSurveyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // get logged in user
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      alert("You must be logged in!")
-      return
-    }
+    if (!question) return;
 
-    const id = Math.random().toString(36).slice(2, 8)
-    setSurveyId(id)
+    const id = crypto.randomUUID();
+    setSurveyId(id);
 
     const optionList =
       type === "multiple"
         ? options.split(",").map(o => o.trim()).filter(o => o.length > 0)
-        : null
+        : null;
 
-    await createSurvey({
-      id,
-      user_id: user.id,
-      question,
-      type,
-      options: optionList
-    })
+    try {
+      await createSurvey({
+        id,
+        question,
+        type,
+        options: optionList,
+        project_id: projectId,
+      });
+      router.refresh(); // refresh to show new survey if needed
+    } catch (err) {
+      console.error("Failed to create survey:", err);
+      alert("Failed to create survey. Check console.");
+    }
   }
 
-  const optionList = options
+  const previewOptions = options
     .split(",")
     .map(o => o.trim())
     .filter(o => o.length > 0)
@@ -54,6 +59,7 @@ export default function CreateSurveyPage() {
     <div className="min-h-screen flex items-start justify-center py-16 px-4 bg-gray-50">
       <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
 
+        {/* Survey Form */}
         <Card>
           <CardHeader>
             <CardTitle>Create OneQ Survey</CardTitle>
@@ -104,6 +110,7 @@ export default function CreateSurveyPage() {
           </CardContent>
         </Card>
 
+        {/* Survey Preview */}
         {surveyId && (
           <Card className="shadow-lg">
             <CardHeader>
@@ -121,28 +128,22 @@ export default function CreateSurveyPage() {
 
               {type === "multiple" && (
                 <div className="space-y-2">
-                  {optionList.map((o) => (
-                    <Button key={o} variant="secondary" className="w-full">
-                      {o}
-                    </Button>
+                  {previewOptions.map((o) => (
+                    <Button key={o} variant="secondary" className="w-full">{o}</Button>
                   ))}
                 </div>
               )}
 
               {type === "rating" && (
                 <div className="space-x-1">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <Button key={n} variant="secondary">{n}</Button>
-                  ))}
+                  {[1,2,3,4,5].map(n => <Button key={n} variant="secondary">{n}</Button>)}
                 </div>
               )}
 
               {type === "emoji" && (
                 <div className="space-x-1 text-2xl">
-                  {["😡", "😕", "😐", "🙂", "🤩"].map((e) => (
-                    <button key={e} className="p-2 hover:bg-gray-100 rounded">
-                      {e}
-                    </button>
+                  {["😡","😕","😐","🙂","🤩"].map(e => (
+                    <button key={e} className="p-2 hover:bg-gray-100 rounded">{e}</button>
                   ))}
                 </div>
               )}
@@ -154,6 +155,7 @@ export default function CreateSurveyPage() {
             </CardContent>
           </Card>
         )}
+
       </div>
     </div>
   )

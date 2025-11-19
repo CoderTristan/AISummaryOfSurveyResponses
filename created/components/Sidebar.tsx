@@ -1,6 +1,7 @@
-"use client"
+'use client'
 
-import Link from "next/link"
+import Link from "next/link";
+import { usePathname, useParams } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -9,46 +10,59 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export function DashboardSidebar() {
+  const pathname = usePathname();
+  const params = useParams();
+  const projectId = params.projectId;
+
+  const isProjectsPage = pathname === "/dashboard/projects";
+
   return (
     <Sidebar className="top-[60px] h-[calc(100vh-60px)]">
       <SidebarContent>
-
-        {/* MAIN SECTION */}
         <SidebarGroup>
           <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarMenu>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard">Overview</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {isProjectsPage ? (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/dashboard/projects">Projects</Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ) : (
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/dashboard/projects">Back to Projects</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard/create">Create Survey</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={`/dashboard/${projectId}/overview`}>Overview</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard/email">Email Alerts</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={`/dashboard/${projectId}/create`}>Create Survey</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard/templates">Templates</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={`/dashboard/${projectId}/email`}>Email Alerts</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
+            )}
 
           </SidebarMenu>
         </SidebarGroup>
-
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
