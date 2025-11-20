@@ -1,27 +1,31 @@
-'use client'
+"use client";
 
-import { useState } from "react"
-import { createSurvey, getSurveys } from "@/lib/supabaseSurveys";
+import { useState } from "react";
+import { createSurvey } from "@/lib/supabaseSurveys";
 import { useParams, useRouter } from "next/navigation";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { CardHeader, CardTitle, CardContent, Card } from "./ui/card";
-import { Label} from "./ui/label";
+import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
-
+import { Copy } from "lucide-react";
 
 export default function CreateSurveyPage() {
   const router = useRouter();
-   const {projectId} = useParams()
-  
-  const [question, setQuestion] = useState("")
-  const [type, setType] = useState("yesno")
-  const [options, setOptions] = useState("")
-  const [surveyId, setSurveyId] = useState<string | null>(null)
+  const params = useParams();
+
+  let projectId = params.projectId;
+  projectId = Array.isArray(projectId) ? projectId[0] : projectId;
+
+  const [question, setQuestion] = useState("");
+  const [type, setType] = useState("yesno");
+  const [options, setOptions] = useState("");
+  const [surveyId, setSurveyId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!question) return;
 
@@ -41,32 +45,41 @@ export default function CreateSurveyPage() {
         options: optionList,
         project_id: projectId,
       });
-      router.refresh(); // refresh to show new survey if needed
+
+      router.refresh();
     } catch (err) {
-      console.error("Failed to create survey:", err);
-      alert("Failed to create survey. Check console.");
+      console.error(err);
+      alert("Survey creation failed.");
     }
-  }
+  };
 
   const previewOptions = options
     .split(",")
     .map(o => o.trim())
-    .filter(o => o.length > 0)
+    .filter(o => o.length > 0);
+  console.log(surveyId)
+  const previewLink = surveyId ? `http://localhost:3000/survey/${surveyId}` : "";
+  const embedCode = surveyId
+    ? `<iframe src="http://localhost:3000/survey/${surveyId}" style="width:100%; height:260px; border:none;" scrolling="no"></iframe>`
+    : "";
 
-  const previewLink = surveyId ? `/s/${surveyId}` : ""
+  function copy(text: string) {
+    navigator.clipboard.writeText(text);
+  }
 
   return (
     <div className="min-h-screen flex items-start justify-center py-16 px-4 bg-gray-50">
       <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
 
-        {/* Survey Form */}
-        <Card>
+        {/* CREATE FORM */}
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Create OneQ Survey</CardTitle>
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={handleSubmit}>
-              
+
+              {/* Question */}
               <div className="space-y-1">
                 <Label>Question</Label>
                 <Input
@@ -77,11 +90,12 @@ export default function CreateSurveyPage() {
                 />
               </div>
 
+              {/* Type */}
               <div className="space-y-1">
-                <Label>Question Type</Label>
+                <Label>Type</Label>
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="yesno">Yes / No</SelectItem>
@@ -92,6 +106,7 @@ export default function CreateSurveyPage() {
                 </Select>
               </div>
 
+              {/* Multi options */}
               {type === "multiple" && (
                 <div className="space-y-1">
                   <Label>Options (comma separated)</Label>
@@ -110,53 +125,48 @@ export default function CreateSurveyPage() {
           </CardContent>
         </Card>
 
-        {/* Survey Preview */}
+        {/* PREVIEW + EMBED */}
         {surveyId && (
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Survey Preview</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="font-semibold mb-4">{question}</p>
+            <CardContent className="space-y-6">
 
-              {type === "yesno" && (
-                <div className="space-x-2">
-                  <Button>Yes</Button>
-                  <Button variant="secondary">No</Button>
-                </div>
-              )}
 
-              {type === "multiple" && (
-                <div className="space-y-2">
-                  {previewOptions.map((o) => (
-                    <Button key={o} variant="secondary" className="w-full">{o}</Button>
-                  ))}
-                </div>
-              )}
-
-              {type === "rating" && (
-                <div className="space-x-1">
-                  {[1,2,3,4,5].map(n => <Button key={n} variant="secondary">{n}</Button>)}
-                </div>
-              )}
-
-              {type === "emoji" && (
-                <div className="space-x-1 text-2xl">
-                  {["😡","😕","😐","🙂","🤩"].map(e => (
-                    <button key={e} className="p-2 hover:bg-gray-100 rounded">{e}</button>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-6">
+              {/* LINK */}
+              <div className="space-y-1">
                 <Label>Survey Link</Label>
-                <Input readOnly value={previewLink} className="mt-1" />
+                <div className="flex gap-2">
+                  <Input readOnly value={previewLink} />
+                  <Button variant="outline" onClick={() => copy(previewLink)}>
+                    <Copy size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              {/* IFRAME EMBED */}
+              <div className="space-y-1">
+                <Label>Embed as iFrame</Label>
+                <div className="flex gap-2">
+                  <Textarea readOnly value={embedCode} rows={3} />
+                  <Button variant="outline" onClick={() => copy(embedCode)}>
+                    <Copy size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              {/* LIVE IFRAME PREVIEW */}
+              <div className="border rounded-lg overflow-hidden">
+                <iframe
+                  src={previewLink}
+                  style={{ width: "100%", height: "260px", border: "none" }}
+                />
               </div>
             </CardContent>
           </Card>
         )}
-
       </div>
     </div>
-  )
+  );
 }

@@ -6,17 +6,26 @@ import { createSupaClient } from "./supabaseClient";
 const supabase = createSupaClient();
 
 export async function getSurveys(projectId: string) {
-  const { userId } = await auth();
-
   const { data, error } = await supabase
     .from("surveys")
     .select("*")
-    .eq("user_id", userId)
     .eq("project_id", projectId);
 
   if (error) throw error;
+  return data || [];
+}
 
-  return data;
+export async function deleteSurveys(projectId: string, surveyId: string) {
+  const { userId } = await auth();
+
+  const { error } = await supabase
+    .from("surveys")
+    .delete()
+    .eq("project_id", projectId)
+    .eq("id", surveyId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
 }
 
 export async function createSurvey(payload: {
@@ -24,7 +33,7 @@ export async function createSurvey(payload: {
   question: string;
   type: string;
   options: string[] | null;
-  project_id: string;
+  project_id: string | undefined;
 }) {
   const { userId } = await auth();
 

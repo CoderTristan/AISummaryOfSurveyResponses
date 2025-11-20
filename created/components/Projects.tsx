@@ -23,7 +23,6 @@ export default function Projects() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null); // project id for open menu
   const router = useRouter();
 
-  // Fetch projects on mount
   async function fetchProjects() {
     try {
       const data = await getUserProjects();
