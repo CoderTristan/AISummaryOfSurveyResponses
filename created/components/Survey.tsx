@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ChangeEvent } from "react";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 
 interface PublicSurveyProps {
   surveyId: string;
@@ -9,7 +11,7 @@ interface PublicSurveyProps {
 export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
   const [survey, setSurvey] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -18,9 +20,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     async function loadSurvey() {
       try {
         const res = await fetch(`/api/surveys/${surveyId}`);
-        if (!res.ok) {
-          throw new Error("Survey not found");
-        }
+        if (!res.ok) throw new Error("Survey not found");
         const data = await res.json();
         setSurvey(data);
       } catch (err) {
@@ -35,22 +35,17 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
 
   async function submit() {
     if (!answer) return;
-    
     setSubmitting(true);
     setError("");
 
     try {
       const res = await fetch(`/api/surveys/${surveyId}/responses`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answer }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to submit");
-      }
+      if (!res.ok) throw new Error("Failed to submit");
 
       setSubmitted(true);
 
@@ -67,163 +62,149 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     }
   }
 
-  if (loading) {
+  if (loading)
     return (
-      <div className="p-6 max-w-xl mx-auto mt-20 text-center">
-        <p className="text-gray-600">Loading survey...</p>
+      <div className="flex items-center justify-center h-screen text-gray-600">
+        Loading survey…
       </div>
     );
-  }
 
-  if (error && !survey) {
+  if (error && !survey)
     return (
-      <div className="p-6 max-w-xl mx-auto mt-20 text-center">
-        <p className="text-red-600">{error}</p>
+      <div className="flex items-center justify-center h-screen text-red-600">
+        {error}
       </div>
     );
-  }
 
-  if (!survey) {
+  if (!survey)
     return (
-      <div className="p-6 max-w-xl mx-auto mt-20 text-center">
-        <p className="text-gray-600">Survey not found</p>
+      <div className="flex items-center justify-center h-screen text-gray-600">
+        Survey not found
       </div>
     );
-  }
 
-  if (submitted) {
+  if (submitted)
     return (
-      <div className="p-6 max-w-xl mx-auto mt-20 text-center">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <p className="text-green-800 text-lg font-semibold">
-            ✓ Thanks for responding!
-          </p>
+      <div className="flex items-center justify-center h-screen p-6 bg-gray-50">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center shadow-lg max-w-2xl w-full">
+          <div className="text-4xl mb-2 text-green-800">✓</div>
+          <div className="font-bold text-green-800 mb-2 text-xl">
+            Thanks for responding!
+          </div>
+          <div className="text-gray-600 text-base">
+            Your response has been recorded.
+          </div>
         </div>
       </div>
     );
-  }
 
-  return (
-    <div className="p-6 max-w-xl mx-auto mt-20">
-      <h1 className="text-2xl font-bold mb-6">{survey.question}</h1>
-
-      {/* YES / NO */}
-      {survey.type === "yesno" && (
-        <div className="space-x-3">
-          <button
-            onClick={() => setAnswer("yes")}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              answer === "yes"
-                ? "bg-black text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Yes
-          </button>
-          <button
-            onClick={() => setAnswer("no")}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              answer === "no"
-                ? "bg-black text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            No
-          </button>
-        </div>
-      )}
-
-      {/* MULTIPLE CHOICE */}
-      {survey.type === "multiple" && (
-        <div className="space-y-3">
-          {survey.options?.map((o: string) => (
-            <button
-              key={o}
-              className={`w-full p-4 rounded-lg text-left font-medium transition-colors ${
-                answer === o
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-              onClick={() => setAnswer(o)}
+  const renderOptions = () => {
+    if (survey.type === "yesno") {
+      return (
+        <div className="flex gap-4 justify-center">
+          {["Yes", "No"].map((v) => (
+            <Button
+              key={v}
+              variant={answer === v.toLowerCase() ? "default" : "outline"}
+              size="lg"
+              onClick={() => setAnswer(v.toLowerCase())}
+              className="flex-1"
             >
-              {answer === o && <span className="mr-2">✓</span>}
-              {o}
-            </button>
+              {v}
+            </Button>
           ))}
         </div>
-      )}
+      );
+    }
 
-      {/* RATING 1–5 */}
-      {survey.type === "rating" && (
-        <div className="flex justify-center space-x-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
+    if (survey.type === "multiple" && survey.options?.length) {
+      return (
+        <div className="flex flex-col gap-3 w-full max-w-2xl mx-auto">
+          {survey.options.map((o: string) => (
+            <Button
+              key={o}
+              variant={answer === o ? "default" : "outline"}
+              size="lg"
+              onClick={() => setAnswer(o)}
+              className="w-full"
+            >
+              {o}
+            </Button>
+          ))}
+        </div>
+      );
+    }
+
+    if (survey.type === "rating") {
+      const max = survey.range || 5;
+      return (
+        <div className="flex gap-4 justify-center">
+          {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
+            <Button
               key={n}
-              className={`w-12 h-12 rounded-lg font-bold transition-colors ${
-                answer === String(n)
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              variant={answer === String(n) ? "default" : "outline"}
+              size="lg"
               onClick={() => setAnswer(String(n))}
             >
               {n}
-            </button>
+            </Button>
           ))}
         </div>
-      )}
+      );
+    }
 
-      {/* EMOJI PICKER */}
-      {survey.type === "emoji" && (
-        <div className="flex justify-center space-x-3">
-          {["😡", "😕", "😐", "🙂", "🤩"].map((e) => (
-            <button
+    if (survey.type === "emoji" && survey.emojis?.length) {
+      return (
+        <div className="flex gap-4 justify-center">
+          {survey.emojis.map((e: string) => (
+            <Button
               key={e}
-              className={`text-4xl p-3 rounded-lg transition-all ${
-                answer === e
-                  ? "bg-black scale-110"
-                  : "bg-gray-100 hover:bg-gray-200 hover:scale-105"
-              }`}
+              variant={answer === e ? "default" : "outline"}
+              size="lg"
               onClick={() => setAnswer(e)}
+              className="text-4xl"
             >
               {e}
-            </button>
+            </Button>
           ))}
         </div>
-      )}
+      );
+    }
 
-      {/* DEFAULT TEXT INPUT */}
-      {survey.type === "text" && (
-        <input
-          type="text"
-          className="border border-gray-300 p-3 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-          placeholder="Type your answer..."
+    if (survey.type === "text") {
+      return (
+        <Textarea
           value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && answer) {
-              submit();
-            }
-          }}
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+            setAnswer(e.target.value)
+          }
+          placeholder="Type your answer…"
+          className="resize-none max-w-2xl mx-auto w-full"
+          onKeyDown={(e) => e.key === "Enter" && answer && submit()}
         />
-      )}
+      );
+    }
 
-      {/* ERROR MESSAGE */}
-      {error && (
-        <p className="mt-4 text-red-600 text-sm text-center">{error}</p>
-      )}
+    return <div className="text-gray-500">No options available</div>;
+  };
 
-      {/* SUBMIT BUTTON */}
-      <button
-        onClick={submit}
-        disabled={!answer || submitting}
-        className={`mt-6 px-6 py-3 rounded-lg w-full font-semibold transition-colors ${
-          !answer || submitting
-            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-            : "bg-black text-white hover:bg-gray-800"
-        }`}
-      >
-        {submitting ? "Submitting..." : "Submit"}
-      </button>
+  return (
+    <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-6">
+      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-3xl space-y-6">
+        <div className="text-2xl font-semibold text-center">{survey.question}</div>
+        {renderOptions()}
+        <Button
+          onClick={submit}
+          disabled={!answer || submitting}
+          className="w-full mt-4"
+          size="lg"
+        >
+          {submitting ? "Submitting…" : "Submit"}
+        </Button>
+        <div className="text-xs text-gray-500 mt-2 text-center">
+          Powered by OneQ
+        </div>
+      </div>
     </div>
   );
 }

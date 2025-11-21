@@ -20,3 +20,14 @@ export async function getSurveyResponses(surveyId: string, order: "asc" | "desc"
 
   return data;
 }
+
+export async function deleteResponses(surveyId: string) {
+  const { userId } = await auth();
+
+  const { error } = await supabase
+    .from("responses")
+    .delete()
+    .eq("survey_id", surveyId)
+
+  if (error) throw error;
+}

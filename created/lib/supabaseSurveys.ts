@@ -32,6 +32,10 @@ export async function createSurvey(payload: {
   id: string;
   question: string;
   type: string;
+  survey_link: string;
+  survey_iframe: string;
+  survey_script: string;
+  survey_widget: string;
   options: string[] | null;
   project_id: string | undefined;
 }) {
