@@ -2,6 +2,8 @@
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
+const APP_URL = process.env.APP_URL!;
+
 export async function POST(req: Request) {
   const { priceId, userId } = await req.json();
 
@@ -9,8 +11,8 @@ export async function POST(req: Request) {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: "http://localhost:3000/dashboard?success=1",
-    cancel_url: "http://localhost:3000/pricing?canceled=1",
+    success_url: `${APP_URL}/dashboard?success=1`,
+    cancel_url: `${APP_URL}/survey/pricing?canceled=1`,
     metadata: { userId },
   });
 

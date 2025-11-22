@@ -2,6 +2,8 @@
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
+const APP_URL = process.env.APP_URL!;
+
 export async function POST(req: Request) {
   const { userId } = await req.json();
 
@@ -9,7 +11,7 @@ export async function POST(req: Request) {
 
   const portal = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: "http://localhost:3000/dashboard",
+    return_url: `${APP_URL}dashboard`,
   });
 
   return NextResponse.json({ url: portal.url });
