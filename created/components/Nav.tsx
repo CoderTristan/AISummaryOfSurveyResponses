@@ -36,14 +36,24 @@ export default function Header() {
         ))}
 
         <SignedIn>
-          <UserButton 
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8"
-              }
-            }}
-          />
-        </SignedIn>
+  <Link href="/billing">
+    <Button 
+      variant="ghost"
+      className="cursor-pointer hover:text-blue-500 hover:bg-white"
+    >
+      Billing
+    </Button>
+  </Link>
+
+  <UserButton 
+    appearance={{
+      elements: {
+        avatarBox: "w-8 h-8"
+      }
+    }}
+  />
+</SignedIn>
+
 
         <SignedOut>
           <SignInButton mode="modal">
