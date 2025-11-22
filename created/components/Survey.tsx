@@ -83,20 +83,39 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
       </div>
     );
 
+  const theme = survey.color || "#6366f1"; // fallback indigo
+
   if (submitted)
     return (
       <div className="flex items-center justify-center h-screen p-6 bg-gray-50">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center shadow-lg max-w-2xl w-full">
-          <div className="text-4xl mb-2 text-green-800">✓</div>
-          <div className="font-bold text-green-800 mb-2 text-xl">
+        <div className="rounded-lg p-8 text-center shadow-lg max-w-2xl w-full border"
+          style={{ borderColor: theme, backgroundColor: theme + "15" }}
+        >
+          <div className="text-4xl mb-2" style={{ color: theme }}>
+            ✓
+          </div>
+          <div className="font-bold mb-2 text-xl" style={{ color: theme }}>
             Thanks for responding!
           </div>
-          <div className="text-gray-600 text-base">
+          <div className="text-gray-700 text-base">
             Your response has been recorded.
           </div>
         </div>
       </div>
     );
+
+  // Render choice options with theme color
+  const themedButton = (isSelected: boolean) =>
+    isSelected
+      ? {
+          backgroundColor: theme,
+          color: "white",
+          borderColor: theme,
+        }
+      : {
+          borderColor: theme,
+          color: theme,
+        };
 
   const renderOptions = () => {
     if (survey.type === "yesno") {
@@ -105,10 +124,11 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
           {["Yes", "No"].map((v) => (
             <Button
               key={v}
-              variant={answer === v.toLowerCase() ? "default" : "outline"}
               size="lg"
               onClick={() => setAnswer(v.toLowerCase())}
-              className="flex-1"
+              style={themedButton(answer === v.toLowerCase())}
+              className="flex-1 border-2"
+              variant="outline"
             >
               {v}
             </Button>
@@ -123,10 +143,11 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
           {survey.options.map((o: string) => (
             <Button
               key={o}
-              variant={answer === o ? "default" : "outline"}
               size="lg"
               onClick={() => setAnswer(o)}
-              className="w-full"
+              style={themedButton(answer === o)}
+              className="w-full border-2"
+              variant="outline"
             >
               {o}
             </Button>
@@ -142,9 +163,11 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
           {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
             <Button
               key={n}
-              variant={answer === String(n) ? "default" : "outline"}
               size="lg"
               onClick={() => setAnswer(String(n))}
+              style={themedButton(answer === String(n))}
+              className="border-2"
+              variant="outline"
             >
               {n}
             </Button>
@@ -153,23 +176,30 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
       );
     }
 
-    if (survey.type === "emoji" && survey.emojis?.length) {
-      return (
-        <div className="flex gap-4 justify-center">
-          {survey.emojis.map((e: string) => (
-            <Button
-              key={e}
-              variant={answer === e ? "default" : "outline"}
-              size="lg"
-              onClick={() => setAnswer(e)}
-              className="text-4xl"
-            >
-              {e}
-            </Button>
-          ))}
-        </div>
-      );
-    }
+    if (survey.type === "emoji") {
+  // If the survey doesn't have emojis stored, define them manually
+  const emojis = survey.emojis && survey.emojis.length
+    ? survey.emojis
+    : ["😡", "😕", "😐", "🙂", "🤩"];
+
+  return (
+    <div className="flex gap-4 justify-center">
+      {emojis.map((e) => (
+        <Button
+          key={e}
+          size="lg"
+          onClick={() => setAnswer(e)}
+          style={themedButton(answer === e)}
+          className="text-4xl border-2"
+          variant="outline"
+        >
+          {e}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 
     if (survey.type === "text") {
       return (
@@ -179,7 +209,8 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
             setAnswer(e.target.value)
           }
           placeholder="Type your answer…"
-          className="resize-none max-w-2xl mx-auto w-full"
+          className="resize-none max-w-2xl mx-auto w-full border-2"
+          style={{ borderColor: theme }}
           onKeyDown={(e) => e.key === "Enter" && answer && submit()}
         />
       );
@@ -190,18 +221,30 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-3xl space-y-6">
-        <div className="text-2xl font-semibold text-center">{survey.question}</div>
+      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-3xl space-y-6 border"
+        style={{ borderColor: theme + "40" }}
+      >
+        {/* Title with theme color */}
+        <div className="text-2xl font-semibold text-center" style={{ color: theme }}>
+          {survey.question}
+        </div>
+
         {renderOptions()}
+
         <Button
           onClick={submit}
           disabled={!answer || submitting}
-          className="w-full mt-4"
           size="lg"
+          className="w-full"
+          style={{
+            backgroundColor: theme,
+            color: "white",
+          }}
         >
           {submitting ? "Submitting…" : "Submit"}
         </Button>
-        <div className="text-xs text-gray-500 mt-2 text-center">
+
+        <div className="text-xs mt-2 text-center text-gray-500">
           Powered by OneQ
         </div>
       </div>

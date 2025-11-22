@@ -8,27 +8,23 @@ import { DashboardSidebar } from "@/components/Sidebar";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      {/* Full screen flex container */}
-      <div className="flex min-h-screen">
 
-        {/* Sidebar */}
         <DashboardSidebar />
 
         {/* Inset content fills remaining space */}
-        <SidebarInset className="flex flex-col flex-1 mt-15">
+        <SidebarInset className="mt-14">
 
           {/* Topbar */}
-          <header className="flex items-center justify-start h-14 px-4 w-full border-b">
+          <header className="flex items-center justify-start h-7 px-4 w-full border-b">
             <SidebarTrigger />
           </header>
 
           {/* Main content */}
-          <main className="flex-1 px-26">
+          <main className="flex-1 px-10">
             {children}
           </main>
 
         </SidebarInset>
-      </div>
     </SidebarProvider>
   );
 }

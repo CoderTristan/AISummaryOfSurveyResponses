@@ -1,26 +1,30 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { createSurvey } from "@/lib/supabaseSurveys";
-
-import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
-import { Label } from "./ui/label";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Button } from "./ui/button";
+import { useState, ChangeEvent } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "./ui/select";
-import { Copy, Check } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
+} from "@/components/ui/select";
+import { Copy, Check, Plus } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+// Add these imports at the top
+import { useParams, useRouter } from "next/navigation";
+import { createSurvey } from "@/lib/supabaseSurveys";
 
 export default function CreateSurveyPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"widget" | "link" | "iframe" | "script">("widget");
+
   const params = useParams();
   const projectId =
     Array.isArray(params.projectId) && params.projectId.length > 0
@@ -28,9 +32,7 @@ export default function CreateSurveyPage() {
       : (params.projectId as string | undefined);
 
   const [question, setQuestion] = useState<string>("");
-  const [type, setType] = useState<
-    "yesno" | "multiple" | "rating" | "emoji" | "text"
-  >("yesno");
+  const [type, setType] = useState<"yesno" | "multiple" | "rating" | "emoji" | "text">("yesno");
   const [options, setOptions] = useState<string>("");
   const [surveyId, setSurveyId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -38,15 +40,42 @@ export default function CreateSurveyPage() {
   const [created, setCreated] = useState<boolean>(false);
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [themeColor, setThemeColor] = useState<string>("#6366f1");
+  const [notifyEnabled, setNotifyEnabled] = useState<boolean>(false);
+  const [notifyEmail, setNotifyEmail] = useState<string>("");
+  const [notifyThreshold, setNotifyThreshold] = useState<number>(100);
 
-  const baseUrl =
-    typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+
+  const surveyExamples = [
+    {
+      type: "yesno",
+      question: "Would you recommend us?",
+      options: ["Yes", "No"]
+    },
+    {
+      type: "multiple",
+      question: "What's your favorite feature?",
+      options: ["Speed", "Design", "Support", "Pricing"]
+    },
+    {
+      type: "rating",
+      question: "How was your experience?",
+      options: ["1", "2", "3", "4", "5"]
+    },
+    {
+      type: "emoji",
+      question: "How do you feel today?",
+      options: ["😡", "😕", "😐", "🙂", "🤩"]
+    },
+    {
+      type: "text",
+      question: "What can we improve?",
+      options: []
+    }
+  ];
 
   const optionArray = (): string[] =>
-    options
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    options.split(",").map((s) => s.trim()).filter(Boolean);
 
   const escapeHtml = (s: string) =>
     String(s)
@@ -56,12 +85,7 @@ export default function CreateSurveyPage() {
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
-  const generateWidgetCode = (
-    id: string,
-    q: string,
-    t: typeof type,
-    opts: string[]
-  ) => {
+  const generateWidgetCode = (id: string, q: string, t: typeof type, opts: string[]) => {
     const apiUrl = `${baseUrl}/api/surveys/${id}/responses`;
 
     const optionsHtml =
@@ -69,11 +93,7 @@ export default function CreateSurveyPage() {
         ? `<div class="oneq-row"><button class="oneq-btn" data-value="yes">Yes</button><button class="oneq-btn" data-value="no">No</button></div>`
         : t === "multiple" && opts.length
         ? `<div class="oneq-col">${opts
-            .map(
-              (o) => `<button class="oneq-btn" data-value="${escapeHtml(
-                o
-              )}">${escapeHtml(o)}</button>`
-            )
+            .map((o) => `<button class="oneq-btn" data-value="${escapeHtml(o)}">${escapeHtml(o)}</button>`)
             .join("")}</div>`
         : t === "rating"
         ? `<div class="oneq-row">${[1, 2, 3, 4, 5]
@@ -81,12 +101,7 @@ export default function CreateSurveyPage() {
             .join("")}</div>`
         : t === "emoji"
         ? `<div class="oneq-row">${["😡", "😕", "😐", "🙂", "🤩"]
-            .map(
-              (e) =>
-                `<button class="oneq-emoji" data-value="${encodeURIComponent(
-                  e
-                )}">${e}</button>`
-            )
+            .map((e) => `<button class="oneq-emoji" data-value="${encodeURIComponent(e)}">${e}</button>`)
             .join("")}</div>`
         : `<div class="oneq-col"><input class="oneq-text" placeholder="Type your answer…" /></div>`;
 
@@ -103,18 +118,22 @@ export default function CreateSurveyPage() {
 .oneq-small{font-size:12px;color:#8b949e;margin-top:10px;text-align:center}
 </style>`;
 
-    const js = `<script>(function(){try{const w=document.getElementById('oneq-${id}');if(!w)return;const btns=w.querySelectorAll('.oneq-btn,.oneq-rate,.oneq-emoji');const text=w.querySelector('.oneq-text');const submit=w.querySelector('.oneq-submit');let val='';function setSelected(el){btns.forEach(b=>b.classList.remove('selected'));el&&el.classList.add('selected')}btns.forEach(b=>{b.addEventListener('click',function(e){e.preventDefault();val=decodeURIComponent(this.dataset.value||this.innerText);setSelected(this);if(submit)submit.disabled=false})});if(text){text.addEventListener('input',()=>{val=text.value.trim();if(submit)submit.disabled=!val})}if(submit){submit.addEventListener('click',async function(){if(!val)return;try{await fetch('${apiUrl}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:val})});w.innerHTML='<div style="text-align:center;padding:28px"><div style="font-size:28px;margin-bottom:8px">✓</div><div style="font-weight:700">Thanks!</div><div style="color:#6b7280;font-size:13px">Response recorded.</div></div>'}catch(e){console.error(e)}})}}catch(e){console.error(e)}})();</script>`;
-
-    return `<div id="oneq-${id}" class="oneq-w"><div class="oneq-q">${escapeHtml(
-      q
-    )}</div>${optionsHtml}<div><button class="oneq-submit" ${
-      t !== "text" ? "disabled" : ""
-    }>Submit</button></div><div class="oneq-small">Powered by OneQ</div></div>${css}${js}`;
+    return `<div id="oneq-${id}" class="oneq-w"><div class="oneq-q">${escapeHtml(q)}</div>${optionsHtml}<div><button class="oneq-submit" ${t !== "text" ? "disabled" : ""}>Submit</button></div><div class="oneq-small">Powered by OneQ</div></div>${css}`;
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Generate live preview widget
+  const generateLivePreview = () => {
+    if (!question.trim()) return "";
+    return generateWidgetCode("preview", question, type, optionArray());
+  };
+
+  const handleSubmit = async () => {
     if (!question.trim()) return;
+
+    if (notifyEnabled && notifyEmail.trim() && !/^\S+@\S+\.\S+$/.test(notifyEmail)) {
+      alert("Please enter a valid email address for notifications.");
+      return;
+    }
 
     setLoading(true);
     setCreated(false);
@@ -125,14 +144,17 @@ export default function CreateSurveyPage() {
     const survey_link = `${baseUrl}/survey/${id}`;
     const survey_iframe = `<iframe src="${survey_link}" style="width:100%; height:360px; border:none;"></iframe>`;
     const survey_widget = generateWidgetCode(id, question, type, optionArray());
-    const survey_script = `<div id="oneq-${id}"></div><script>(function(){var w=document.getElementById('oneq-${id}');if(!w)return;w.innerHTML=${JSON.stringify(
-      survey_widget
-    )};})();</script>`;
+    const survey_script = `<div id="oneq-${id}"></div><script>(function(){var w=document.getElementById('oneq-${id}');if(!w)return;w.innerHTML=${JSON.stringify(survey_widget)};})();</script>`;
 
     const payload = {
       id,
       question,
       type,
+      color: themeColor,
+      notify_enabled: notifyEnabled,
+      notify_email: notifyEnabled ? (notifyEmail.trim() || null) : null,
+      notify_threshold: notifyEnabled ? Number(notifyThreshold || 0) : 0,
+      notify_sent: false,
       survey_link,
       survey_iframe,
       survey_script,
@@ -154,20 +176,9 @@ export default function CreateSurveyPage() {
   };
 
   const previewLink = surveyId ? `${baseUrl}/survey/${surveyId}` : "";
-  const iframeEmbed = surveyId
-    ? `<iframe src="${previewLink}" style="width:100%; height:360px; border:none;"></iframe>`
-    : "";
-  const scriptEmbed = surveyId
-    ? `<div id="oneq-${surveyId}"></div>
-<script>
-(function(){var w=document.getElementById('oneq-${surveyId}');if(!w)return;w.innerHTML=${JSON.stringify(
-        generateWidgetCode(surveyId, question, type, optionArray())
-      )};})();
-</script>`
-    : "";
-  const widgetEmbed = surveyId
-    ? generateWidgetCode(surveyId, question, type, optionArray())
-    : "";
+  const iframeEmbed = surveyId ? `<iframe src="${previewLink}" style="width:100%; height:360px; border:none;"></iframe>` : "";
+  const scriptEmbed = surveyId ? `<div id="oneq-${surveyId}"></div>\n<script>\n(function(){var w=document.getElementById('oneq-${surveyId}');if(!w)return;w.innerHTML=${JSON.stringify(generateWidgetCode(surveyId, question, type, optionArray()))};})();\n</script>` : "";
+  const widgetEmbed = surveyId ? generateWidgetCode(surveyId, question, type, optionArray()) : "";
 
   const doCopy = async (text: string, name: string) => {
     try {
@@ -180,173 +191,272 @@ export default function CreateSurveyPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+    <div className="min-h-screen w-full bg-gray-50 p-6">
       {!openForm ? (
-        <div className="flex justify-center items-center h-full">
-          <Button onClick={() => setOpenForm(true)} className="px-6 py-4 text-lg">
-            Create Survey
-          </Button>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl font-semibold text-gray-900">Create Survey</h1>
+            <Button 
+              onClick={() => setOpenForm(true)} 
+              size="sm"
+              className="gap-2"
+            >
+              <Plus size={16} />
+              Create new
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {surveyExamples.map((example, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setType(example.type as typeof type);
+                  setQuestion(example.question);
+                  if (example.type === "multiple") {
+                    setOptions(example.options.join(", "));
+                  }
+                  setOpenForm(true);
+                }}
+                className="group relative bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-md transition-all text-left"
+              >
+                <div className="aspect-square bg-gray-50 rounded mb-3 flex items-center justify-center overflow-hidden">
+                  <div className="scale-75 transform">
+                    {example.type === "yesno" && (
+                      <div className="flex gap-1">
+                        <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                        <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                      </div>
+                    )}
+                    {example.type === "multiple" && (
+                      <div className="space-y-1">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="w-24 h-6 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                    )}
+                    {example.type === "rating" && (
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <div key={i} className="w-6 h-6 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                    )}
+                    {example.type === "emoji" && (
+                      <div className="flex gap-1 text-xl">
+                        {example.options.map((e, i) => (
+                          <span key={i}>{e}</span>
+                        ))}
+                      </div>
+                    )}
+                    {example.type === "text" && (
+                      <div className="w-28 h-8 bg-gray-200 rounded"></div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs font-medium text-gray-700 capitalize">{example.type === "yesno" ? "Yes/No" : example.type}</div>
+              </button>
+            ))}
+          </div>
         </div>
       ) : (
-        <>
-          
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[400px,1fr] gap-6">
+          {/* Left Sidebar - Form */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setOpenForm(false)}
+                className="text-gray-600"
+              >
+                ← Back
+              </Button>
+            </div>
 
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 transition-all">
-            
-            <Card className="shadow-lg border-l-[6px]" style={{ borderColor: themeColor }}>
-              <CardHeader>
-                <CardTitle>Create a OneQ Survey <div className="flex flex-col gap-1 text-sm mx-64">
-            <Label>Theme Color</Label>
-            <input
-              type="color"
-              value={themeColor}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setThemeColor(e.target.value)}
-              className="w-10 h-10 rounded cursor-pointer"
-            />
-          </div></CardTitle>
-                
+            <Card className="border-l-4" style={{ borderLeftColor: themeColor }}>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Survey Settings</CardTitle>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-xs">Question</Label>
+                  <Input
+                    placeholder="Ask something..."
+                    value={question}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setQuestion(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Type</Label>
+                  <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yesno">Yes / No</SelectItem>
+                      <SelectItem value="multiple">Multiple Choice</SelectItem>
+                      <SelectItem value="rating">Rating (1–5)</SelectItem>
+                      <SelectItem value="emoji">Emoji Picker</SelectItem>
+                      <SelectItem value="text">Text</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {type === "multiple" && (
                   <div>
-                    <Label>Question</Label>
-                    <Input
-                      placeholder="Ask something..."
-                      value={question}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setQuestion(e.target.value)}
-                      required
+                    <Label className="text-xs">Options (comma separated)</Label>
+                    <Textarea
+                      placeholder="Red, Blue, Green"
+                      value={options}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setOptions(e.target.value)}
+                      className="mt-1"
+                      rows={3}
                     />
                   </div>
+                )}
 
-                  <div>
-                    <Label>Type</Label>
-                    <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="yesno">Yes / No</SelectItem>
-                        <SelectItem value="multiple">Multiple Choice</SelectItem>
-                        <SelectItem value="rating">Rating (1–5)</SelectItem>
-                        <SelectItem value="emoji">Emoji Picker</SelectItem>
-                        <SelectItem value="text">Text</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label className="text-xs">Theme Color</Label>
+                  <input
+                    type="color"
+                    value={themeColor}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setThemeColor(e.target.value)}
+                    className="w-full h-10 rounded cursor-pointer border mt-1"
+                  />
+                </div>
+
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs">Email Notifications</Label>
+                    <Switch checked={notifyEnabled} onCheckedChange={(v) => setNotifyEnabled(Boolean(v))} />
                   </div>
 
-                  {type === "multiple" && (
-                    <div>
-                      <Label>Options (comma separated)</Label>
-                      <Textarea
-                        placeholder="Red, Blue, Green"
-                        value={options}
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setOptions(e.target.value)}
-                      />
+                  {notifyEnabled && (
+                    <div className="space-y-3 pt-2">
+                      <div>
+                        <Label className="text-xs">Email</Label>
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          value={notifyEmail}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => setNotifyEmail(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs">Threshold</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={notifyThreshold}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => setNotifyThreshold(Number(e.target.value))}
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
                   )}
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button type="submit" className="flex-1" disabled={loading}>
-                      {loading ? "Creating…" : "Create Survey"}
-                    </Button>
-                    {created && <div className="text-green-600 font-medium">Created ✓</div>}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Create a short single-question survey and embed anywhere.
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg max-h-24">
-              <CardContent className="flex flex-col gap-4">
-                {!surveyId ? (
-                  <div className="text-gray-500">Preview will appear after creating a survey.</div>
-                ) : (
-                  <>
-                    <div className="border rounded-lg p-4 bg-white">
-                      <div dangerouslySetInnerHTML={{ __html: widgetEmbed }} />
-                    </div>
-
-                    <Tabs defaultValue="widget" className="w-full">
-                      <TabsList className="grid grid-cols-4 gap-1 mb-3">
-                        <TabsTrigger value="widget">Widget</TabsTrigger>
-                        <TabsTrigger value="link">Link</TabsTrigger>
-                        <TabsTrigger value="iframe">iFrame</TabsTrigger>
-                        <TabsTrigger value="script">Script</TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="widget" className="space-y-2">
-                        <div className="text-xs text-gray-500">
-                          Paste this native widget HTML into any page (recommended).
-                        </div>
-                        <div className="flex gap-2">
-                          <Textarea
-                            readOnly
-                            rows={6}
-                            value={widgetEmbed}
-                            className="font-mono text-xs max-h-24"
-                          />
-                          <Button variant="outline" onClick={() => doCopy(widgetEmbed, "widget")}>
-                            {copiedField === "widget" ? <Check /> : <Copy />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="link" className="space-y-2">
-                        <div className="text-xs text-gray-500">Share this direct link.</div>
-                        <div className="flex gap-2">
-                          <Input
-                            readOnly
-                            value={previewLink}
-                            className="font-mono text-sm"
-                          />
-                          <Button variant="outline" onClick={() => doCopy(previewLink, "link")}>
-                            {copiedField === "link" ? <Check /> : <Copy />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="iframe" className="space-y-2">
-                        <div className="text-xs text-gray-500">
-                          Traditional iframe embed (works everywhere).
-                        </div>
-                        <div className="flex gap-2">
-                          <Textarea
-                            readOnly
-                            rows={3}
-                            value={iframeEmbed}
-                            className="font-mono text-xs max-h-24"
-                          />
-                          <Button variant="outline" onClick={() => doCopy(iframeEmbed, "iframe")}>
-                            {copiedField === "iframe" ? <Check /> : <Copy />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="script" className="space-y-2">
-                        <div className="text-xs text-gray-500">
-                          JavaScript embed that injects the widget into a placeholder div.
-                        </div>
-                        <div className="flex gap-2">
-                          <Textarea
-                            readOnly
-                            rows={6}
-                            value={scriptEmbed}
-                            className="font-mono text-xs max-h-24"
-                          />
-                          <Button variant="outline" onClick={() => doCopy(scriptEmbed, "script")}>
-                            {copiedField === "script" ? <Check /> : <Copy />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </>
-                )}
+                <div className="pt-2">
+                  <Button onClick={handleSubmit} className="w-full" disabled={loading}>
+                    {loading ? "Creating…" : created ? "Created ✓" : "Create Survey"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
-        </>
+
+          {/* Right Side - Large Preview */}
+          <div className="lg:sticky lg:top-6 h-fit">
+            <div className="space-y-4">
+              <Card className="border-2 shadow-xl">
+                <CardContent className="p-12">
+                  <div className="max-w-xl mx-auto">
+                    {question.trim() ? (
+                      <div dangerouslySetInnerHTML={{ __html: generateLivePreview() }} />
+                    ) : (
+                      <div className="text-center text-gray-400 py-12">
+                        <div className="text-sm">Enter a question to see preview</div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {surveyId && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Embed Code</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full">
+  <TabsList className="grid grid-cols-4 gap-1 mb-3">
+    <TabsTrigger value="widget">Widget</TabsTrigger>
+    <TabsTrigger value="link">Link</TabsTrigger>
+    <TabsTrigger value="iframe">iFrame</TabsTrigger>
+    <TabsTrigger value="script">Script</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="widget" className="space-y-2">
+    <div className="flex gap-2">
+      <Textarea
+        readOnly
+        rows={4}
+        value={widgetEmbed}
+        className="font-mono text-xs"
+      />
+      <Button variant="outline" size="icon" onClick={() => doCopy(widgetEmbed, "widget")}>
+        {copiedField === "widget" ? <Check size={16} /> : <Copy size={16} />}
+      </Button>
+    </div>
+  </TabsContent>
+
+  <TabsContent value="link" className="space-y-2">
+    {activeTab === "link" ? (
+      <iframe src={previewLink} style={{ width: "100%", height: 360, border: "none" }} />
+    ) : (
+      <div className="flex gap-2">
+        <Input readOnly value={previewLink} className="font-mono text-xs" />
+        <Button variant="outline" size="icon" onClick={() => doCopy(previewLink, "link")}>
+          {copiedField === "link" ? <Check size={16} /> : <Copy size={16} />}
+        </Button>
+      </div>
+    )}
+  </TabsContent>
+
+  <TabsContent value="iframe" className="space-y-2">
+    {activeTab === "iframe" && surveyId && (
+      <iframe src={previewLink} style={{ width: "100%", height: 360, border: "none" }} />
+    )}
+    <div className="flex gap-2">
+      <Textarea readOnly rows={2} value={iframeEmbed} className="font-mono text-xs" />
+      <Button variant="outline" size="icon" onClick={() => doCopy(iframeEmbed, "iframe")}>
+        {copiedField === "iframe" ? <Check size={16} /> : <Copy size={16} />}
+      </Button>
+    </div>
+  </TabsContent>
+
+  <TabsContent value="script" className="space-y-2">
+    <div className="flex gap-2">
+      <Textarea readOnly rows={4} value={scriptEmbed} className="font-mono text-xs" />
+      <Button variant="outline" size="icon" onClick={() => doCopy(scriptEmbed, "script")}>
+        {copiedField === "script" ? <Check size={16} /> : <Copy size={16} />}
+      </Button>
+    </div>
+  </TabsContent>
+</Tabs>
+
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -28,10 +28,27 @@ export async function deleteSurveys(projectId: string, surveyId: string) {
   if (error) throw error;
 }
 
+export async function updateSurveyEmailFields(id: any, data:any) {
+return supabase
+.from("surveys")
+.update({
+notify_enabled: data.notify_enabled,
+notify_email: data.notify_email,
+notify_threshold: data.notify_threshold,
+notify_sent: data.notify_sent,
+})
+.eq("id", id);
+}
+
 export async function createSurvey(payload: {
   id: string;
   question: string;
   type: string;
+  color: string;
+  notify_email: string | null;
+  notify_threshold: number;
+  notify_enabled: boolean;
+  notify_sent: boolean;
   survey_link: string;
   survey_iframe: string;
   survey_script: string;

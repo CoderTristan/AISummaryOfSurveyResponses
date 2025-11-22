@@ -92,7 +92,7 @@ export default function Projects() {
         {projects.map((project) => (
           <Link
             key={project.id}
-            href={`/dashboard/${project.id}/overview`}
+            href={`/dashboard/${project.id}/create`}
             className="p-6 border rounded-lg hover:shadow-lg transition cursor-pointer flex justify-between items-center"
           >
             <span>{project.name}</span>
