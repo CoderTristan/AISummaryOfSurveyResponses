@@ -54,11 +54,11 @@ export async function POST(req: Request) {
     });
 
     // Insert into Supabase users table
-    const { error } = await supabase.from("users").insert({
+    const { error } = await supabase.from("subscriptions").insert({
       user_id: clerkUserId,
       stripe_customer_id: customer.id,
-      status: "free",
-      plan: "free",
+      status: "starter",
+      plan: "starter",
     });
 
     if (error) {
