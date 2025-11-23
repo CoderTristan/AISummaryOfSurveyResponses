@@ -1,8 +1,8 @@
 // app/api/checkout/route.ts
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { Redis } from "@upstash/redis";
 import { createClient } from "@supabase/supabase-js";
+import { Redis } from "@upstash/redis";
 
 const APP_URL = process.env.APP_URL!;
 
@@ -21,69 +21,56 @@ const redis = new Redis({
 export async function POST(req: Request) {
   const { priceId, userId } = await req.json();
 
-  if (!priceId || !userId) {
-    return NextResponse.json({ error: "Missing priceId or userId" }, { status: 400 });
+  if (!userId || !priceId) {
+    return NextResponse.json(
+      { error: "Missing userId or priceId" },
+      { status: 400 }
+    );
   }
 
   // 1️⃣ Get or create Stripe customer
   let customerId = await redis.get<string>(`user:${userId}:customer`);
-
   if (!customerId) {
     const customer = await stripe.customers.create({ metadata: { userId } });
     customerId = customer.id;
 
-    // Save mappings
     await redis.set(`user:${userId}:customer`, customerId);
     await redis.set(`customer:${customerId}:user`, userId);
 
-    // Minimal Supabase record
-    await supabase.from("subscriptions").upsert({
-      user_id: userId,
-      stripe_customer_id: customerId,
-      plan: "free",
-    });
+    // Create minimal Supabase record
+    await supabase
+      .from("subscriptions")
+      .upsert({ user_id: userId, stripe_customer_id: customerId, plan: "free" });
   }
 
-  // 2️⃣ Check for existing subscription
-  const subscriptions = await stripe.subscriptions.list({
+  // 2️⃣ Get current active subscription
+  const subs = await stripe.subscriptions.list({
     customer: customerId,
-    status: "all",
-    expand: ["data.default_payment_method", "data.items.data.price.product"],
+    status: "active",
+    limit: 1,
   });
 
-  const activeSub = subscriptions.data.find((s) => s.status === "active");
+  const activeSub = subs.data[0];
 
-  // 3️⃣ Cancel old subscription immediately if exists
+  // 3️⃣ If there's an active subscription, cancel immediately with proration
   if (activeSub) {
     await stripe.subscriptions.update(activeSub.id, {
-      cancel_at_period_end: false, // cancel immediately
+      cancel_at_period_end: false,
+      proration_behavior: "create_prorations",
     });
   }
 
-  // 4️⃣ Create new subscription with proration
-  const subscription = await stripe.subscriptions.create({
+  // 4️⃣ Create new subscription with the selected price
+  const newSub = await stripe.subscriptions.create({
     customer: customerId,
-    items: [{ price: priceId }],
-    payment_behavior: "default_incomplete",
+    items: [{ price: priceId, quantity: 1 }],
+    payment_behavior: "default_incomplete", // ensures no card prompt if one exists
     expand: ["latest_invoice.payment_intent"],
-    proration_behavior: "create_prorations", // ensures immediate proration
+    metadata: { userId },
   });
 
-  // 5️⃣ Update Redis and Supabase
-  await redis.set(`customer:${customerId}:subscription`, JSON.stringify(subscription));
-  await supabase.from("subscriptions").upsert({
-    user_id: userId,
-    stripe_customer_id: customerId,
-    plan: priceId,
-  });
+  // 5️⃣ Save subscription snapshot in Redis
+  await redis.set(`customer:${customerId}:subscription`, JSON.stringify(newSub));
 
-  // 6️⃣ Return Stripe Checkout info
-  const invoice = subscription.latest_invoice as any;
-  const paymentIntent = invoice.payment_intent as any;
-
-  return NextResponse.json({
-    subscriptionId: subscription.id,
-    clientSecret: paymentIntent?.client_secret,
-    status: subscription.status,
-  });
+  return NextResponse.json({ url: `${APP_URL}/dashboard/projects?success=1`, subscriptionId: newSub.id });
 }
