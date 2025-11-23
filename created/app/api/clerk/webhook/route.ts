@@ -39,9 +39,6 @@ export async function POST(req: Request) {
     return new Response("Invalid Clerk webhook signature", { status: 400 });
   }
 
-  // -----------------------------
-  // HANDLE CLERK USER CREATED
-  // -----------------------------
   if (event.type === "user.created") {
     const user = event.data;
     const clerkUserId = user.id;
@@ -50,7 +47,6 @@ export async function POST(req: Request) {
     console.log("🆕 Clerk user created:", clerkUserId);
 
     try {
-      // Create Stripe customer
       const customer = await stripe.customers.create({
         email: email || undefined,
         metadata: { clerkUserId },
@@ -65,7 +61,7 @@ export async function POST(req: Request) {
         user_id: clerkUserId,
         stripe_customer_id: customer.id,
         plan: "starter",
-        status: "trial",
+        status: "cancel",
         trial_start: trialStart.toISOString(),
         trial_end: trialEnd.toISOString(),
       });

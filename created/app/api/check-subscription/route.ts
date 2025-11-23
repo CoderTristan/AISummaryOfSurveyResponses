@@ -1,15 +1,11 @@
-// /app/api/check-subscription/route.ts
+'use server'
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { auth } from "@clerk/nextjs/server";
+import { createSupaClient } from "@/lib/supabaseClient";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const userId = url.searchParams.get("userId");
+   const supabase = createSupaClient();
+  const { userId } = await auth(); 
 
   if (!userId) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
