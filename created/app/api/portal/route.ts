@@ -5,16 +5,16 @@ import { createClient } from "@supabase/supabase-js";
 
 const APP_URL = process.env.APP_URL!;
 
-// Supabase with service key
+// Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Initialize Upstash Redis
+// Upstash Redis client
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
 });
 
 export async function POST(req: Request) {
@@ -23,22 +23,21 @@ export async function POST(req: Request) {
     return new NextResponse("Missing userId", { status: 400 });
   }
 
-  // 1️⃣ Check Upstash KV for existing customer
-  let customerId = await redis.get<string>(`UPSTASH:user:${userId}:customer`);
+  // 1️⃣ Check Redis for existing customer
+  let customerId = await redis.get<string>(`user:${userId}:customer`);
 
   if (!customerId) {
     // 2️⃣ Create new Stripe customer
     const customer = await stripe.customers.create({
       metadata: { userId },
     });
-
     customerId = customer.id;
 
-    // 3️⃣ Save KV mappings in Upstash
-    await redis.set(`UPSTASH:user:${userId}:customer`, customerId);
-    await redis.set(`UPSTASH:customer:${customerId}:user`, userId);
+    // 3️⃣ Save Redis mappings
+    await redis.set(`user:${userId}:customer`, customerId);
+    await redis.set(`customer:${customerId}:user`, userId);
 
-    // 4️⃣ Save minimal record in Supabase (free plan)
+    // 4️⃣ Save minimal record in Supabase
     try {
       await supabase
         .from("subscriptions")

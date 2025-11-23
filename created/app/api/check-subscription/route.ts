@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 
-// Initialize Upstash Redis using the environment variables
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
 });
 
 export async function POST(req: Request) {
@@ -15,10 +14,9 @@ export async function POST(req: Request) {
   }
 
   // 1️⃣ Get Stripe customer ID from Redis
-  const customerId = await redis.get<string>(`UPSTASH:user:${userId}:customer`);
+  const customerId = await redis.get<string>(`user:${userId}:customer`);
 
   if (!customerId) {
-    // User exists but hasn’t subscribed yet
     return NextResponse.json({
       plan: "free",
       active: false,
@@ -28,10 +26,10 @@ export async function POST(req: Request) {
   }
 
   // 2️⃣ Get subscription snapshot from Redis
-  const subscription = await redis.get<any>(`UPSTASH:customer:${customerId}:subscription`);
+  const subscriptionJson = await redis.get<string>(`customer:${customerId}:subscription`);
+  const subscription = subscriptionJson ? JSON.parse(subscriptionJson) : null;
 
   if (!subscription) {
-    // Customer exists but hasn’t subscribed yet
     return NextResponse.json({
       plan: "free",
       active: false,
@@ -40,11 +38,11 @@ export async function POST(req: Request) {
     });
   }
 
-  // 3️⃣ Build clean response for frontend
+  // 3️⃣ Build response for frontend
   return NextResponse.json({
     customerId,
     subscription,
-    plan: subscription.priceId || "paid", // Stripe price ID or fallback
+    plan: subscription.priceId || "paid",
     active: subscription.status === "active",
     status: subscription.status,
     periodEnd: subscription.current_period_end,

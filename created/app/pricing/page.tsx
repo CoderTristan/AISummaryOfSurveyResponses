@@ -3,21 +3,21 @@ import { auth } from "@clerk/nextjs/server";
 import { Redis } from "@upstash/redis";
 
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
 });
 
 export default async function PricingPage() {
   const { userId } = await auth();
   if (!userId) throw new Error("Missing userId");
 
-  // 1️⃣ Get customerId from Upstash KV
-  const customerId = await redis.get<string>(`UPSTASH:user:${userId}:customer`);
+  // 1️⃣ Get customerId from Upstash Redis
+  const customerId = await redis.get<string>(`user:${userId}:customer`);
 
-  // 2️⃣ Get subscription snapshot from Upstash KV
+  // 2️⃣ Get subscription snapshot
   let subscription: any = null;
   if (customerId) {
-    const subJson = await redis.get<string>(`UPSTASH:customer:${customerId}:subscription`);
+    const subJson = await redis.get<string>(`customer:${customerId}:subscription`);
     if (subJson) subscription = JSON.parse(subJson);
   }
 

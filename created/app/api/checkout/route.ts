@@ -13,8 +13,8 @@ const supabase = createClient(
 
 // Upstash Redis client
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
 });
 
 export async function POST(req: Request) {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   }
 
   // 1️⃣ Check if user already has a Stripe customer
-  let customerId = await redis.get<string>(`UPSTASH:user:${userId}:customer`);
+  let customerId = await redis.get<string>(`user:${userId}:customer`);
 
   if (!customerId) {
     // 2️⃣ Create new Stripe customer
@@ -38,8 +38,8 @@ export async function POST(req: Request) {
     customerId = customer.id;
 
     // Save Redis mappings
-    await redis.set(`UPSTASH:user:${userId}:customer`, customerId);
-    await redis.set(`UPSTASH:customer:${customerId}:user`, userId);
+    await redis.set(`user:${userId}:customer`, customerId);
+    await redis.set(`customer:${customerId}:user`, userId);
 
     // Save minimal record in Supabase
     try {
@@ -55,14 +55,14 @@ export async function POST(req: Request) {
     }
   }
 
-  // 3️⃣ Create the Checkout Session (2025 Clover API)
+  // 3️⃣ Create the Checkout Session
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${APP_URL}/dashboard/projects?success=1`,
     cancel_url: `${APP_URL}/pricing?canceled=1`,
-    metadata: { userId }, // track which user started checkout
+    metadata: { userId },
   });
 
   return NextResponse.json({ url: session.url, sessionId: session.id });

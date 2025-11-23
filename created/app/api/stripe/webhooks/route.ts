@@ -10,14 +10,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 // Upstash Redis
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
 });
 
 export const runtime = "nodejs"; // ensures raw body handling
 
 export async function POST(req: NextRequest) {
-  // 1️⃣ Get raw payload and signature
   const body = await req.text();
   const sig = (await headers()).get("stripe-signature");
 
@@ -26,7 +25,6 @@ export async function POST(req: NextRequest) {
     return new NextResponse("Missing signature", { status: 400 });
   }
 
-  // 2️⃣ Verify webhook signature
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
@@ -41,8 +39,6 @@ export async function POST(req: NextRequest) {
 
   const type = event.type;
   const data = event.data.object as any;
-
-  // 3️⃣ Extract customerId
   const customerId = data?.customer ?? (data?.billing_reason ? data?.customer : null);
 
   if (!customerId) {
@@ -50,46 +46,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  // 4️⃣ Helper to fetch full subscription and store in KV
-  async function writeSubscriptionToKV(subscriptionId: string) {
-    try {
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      await redis.set(`UPSTASH:customer:${customerId}:subscription`, JSON.stringify(subscription));
-      console.log(
-        `[stripe:webhook] KV updated for ${customerId} (sub: ${subscription.id}, eventId: ${event.id})`
-      );
-    } catch (err) {
-      console.error(`[stripe:webhook] failed retrieving/writing subscription:`, err);
-      throw err;
-    }
+  async function writeSubscriptionToRedis(subscriptionId: string) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    await redis.set(`customer:${customerId}:subscription`, JSON.stringify(subscription));
+    console.log(`[stripe:webhook] Redis updated for ${customerId} (sub: ${subscription.id}, eventId: ${event.id})`);
   }
 
   try {
     switch (type) {
-      // Subscription lifecycle events
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
-        await redis.set(`UPSTASH:customer:${customerId}:subscription`, JSON.stringify(data));
-        console.log(
-          `[stripe:webhook] stored subscription snapshot for ${customerId} (event: ${type}, sub: ${data.id})`
-        );
+        await redis.set(`customer:${customerId}:subscription`, JSON.stringify(data));
+        console.log(`[stripe:webhook] stored subscription snapshot for ${customerId} (event: ${type}, sub: ${data.id})`);
         break;
 
-      // Invoice events — refresh subscription from Stripe
       case "invoice.payment_succeeded":
       case "invoice.payment_failed":
-        if (data.subscription) {
-          await writeSubscriptionToKV(data.subscription);
-        } else {
-          console.log(`[stripe:webhook] invoice event had no subscription: ${type}`);
-        }
-        break;
-
-      // Checkout session completed — often includes subscription id
       case "checkout.session.completed":
         if (data.subscription) {
-          await writeSubscriptionToKV(data.subscription);
+          await writeSubscriptionToRedis(data.subscription);
         }
         break;
 
