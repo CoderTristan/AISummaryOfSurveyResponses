@@ -1,34 +1,41 @@
 import Pricing from "@/components/Pricing";
 import { auth } from "@clerk/nextjs/server";
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { Redis } from "@upstash/redis";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export default async function PricingPage() {
   const { userId } = await auth();
+  if (!userId) throw new Error("Missing userId");
 
-  // Get the current user's plan from Supabase
-  const { data: userRow } = await supabase
-    .from("subscriptions")
-    .select("plan")
-    .eq("user_id", userId)
-    .single();
+  // 1️⃣ Get customerId from Upstash KV
+  const customerId = await redis.get<string>(`UPSTASH:user:${userId}:customer`);
 
-  const currentPlan = userRow?.plan || null;
+  // 2️⃣ Get subscription snapshot from Upstash KV
+  let subscription: any = null;
+  if (customerId) {
+    const subJson = await redis.get<string>(`UPSTASH:customer:${customerId}:subscription`);
+    if (subJson) subscription = JSON.parse(subJson);
+  }
 
-  // Fetch all active Stripe prices
+  // 3️⃣ Determine current plan
+  const currentPlan = subscription?.planId || "free";
+
+  // 4️⃣ Fetch all active Stripe prices
+  const Stripe = (await import("stripe")).default;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2025-11-17.clover",
+  });
+
   const prices = await stripe.prices.list({
     active: true,
     expand: ["data.product"],
   });
 
-  // Map prices to plans including description
+  // 5️⃣ Map prices for UI
   const plans = prices.data
     .map((p) => {
       let name = "Untitled Plan";
@@ -44,12 +51,11 @@ export default async function PricingPage() {
         name,
         price: p.unit_amount ? `$${p.unit_amount / 100}/mo` : "",
         description,
-        isCurrent: currentPlan && name.toLowerCase() === currentPlan.toLowerCase(),
+        isCurrent: name.toLowerCase() === currentPlan.toLowerCase(),
         amount: p.unit_amount || 0,
       };
     })
-    // Sort plans by amount ascending (cheapest first)
     .sort((a, b) => a.amount - b.amount);
 
-  return <Pricing userId={userId!} plans={plans} currentPlan={currentPlan} />;
+  return <Pricing userId={userId} plans={plans} currentPlan={currentPlan} />;
 }

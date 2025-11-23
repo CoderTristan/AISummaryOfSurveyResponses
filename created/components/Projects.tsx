@@ -40,7 +40,7 @@ export default function Projects() {
     }
   }
 
-  // Check subscription/trial
+  // Check subscription / plan status
   useEffect(() => {
     if (!userId) return;
 
@@ -49,29 +49,24 @@ export default function Projects() {
         const res = await fetch(`/api/check-subscription?userId=${userId}`);
         const data = await res.json();
 
-        if (!data || !data.status) {
-          setCanCreateProjects(false);
-          setStatusMessage("No active subscription. Please subscribe to create projects.");
-        } else if (data.status === "trial") {
-          const now = new Date();
-          if (new Date(data.trial_end) > now) {
-            setCanCreateProjects(true);
-            setStatusMessage(`Trial active until ${new Date(data.trial_end).toLocaleDateString()}`);
-          } else {
-            setCanCreateProjects(false);
-            setStatusMessage("Your trial has expired. Please subscribe to continue.");
-          }
+        if (!data || !data.plan) {
+          // No Stripe customer yet → default to free plan
+          setCanCreateProjects(true);
+          setStatusMessage("Free plan active. Upgrade for more features.");
+        } else if (data.plan === "free") {
+          setCanCreateProjects(true);
+          setStatusMessage("Free plan active. Upgrade for more features.");
         } else if (data.status === "active") {
           setCanCreateProjects(true);
           setStatusMessage("Subscription active");
         } else {
           setCanCreateProjects(false);
-          setStatusMessage("Your plan has been cancelled or is inactive.");
+          setStatusMessage("Your plan is inactive. Please subscribe.");
         }
       } catch (err) {
         console.error("Failed to check subscription:", err);
         setCanCreateProjects(false);
-        setStatusMessage("Unable to verify subscription status.");
+        setStatusMessage("Unable to verify plan. Try again later.");
       }
 
       await fetchProjects();
@@ -127,11 +122,11 @@ export default function Projects() {
         </Button>
       </div>
 
-      {/* Subscription / Trial Status Card */}
-      {!canCreateProjects && statusMessage && (
+      {/* Plan Status Card */}
+      {statusMessage && (
         <div className="p-6 border rounded-lg bg-yellow-50 border-yellow-300 text-yellow-800 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
           <p className="font-semibold">{statusMessage}</p>
-          <Link href="/dashboard/pricing">
+          <Link href="/pricing">
             <Button variant="outline">View Pricing</Button>
           </Link>
         </div>

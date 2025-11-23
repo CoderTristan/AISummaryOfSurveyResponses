@@ -17,15 +17,23 @@ export default function Pricing({
   const subscribe = async (priceId: string) => {
     setLoading(priceId);
 
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceId, userId }),
-    });
+    try {
+  const res = await fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ priceId, userId }),
+  });
 
-    const { url } = await res.json();
-    window.location.href = url;
-  };
+  if (!res.ok) throw new Error("Checkout session failed");
+
+  const { url } = await res.json();
+  window.location.href = url;
+} catch (err) {
+  console.error(err);
+  alert("Failed to start checkout. Please try again.");
+  setLoading(null);
+}}
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">

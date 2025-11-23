@@ -1,15 +1,12 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-const TRIAL_DAYS = 14;
 
 export async function POST(req: Request) {
   const payload = await req.text();
@@ -42,41 +39,27 @@ export async function POST(req: Request) {
   if (event.type === "user.created") {
     const user = event.data;
     const clerkUserId = user.id;
-    const email = user.email_addresses?.[0]?.email_address ?? null;
 
     console.log("🆕 Clerk user created:", clerkUserId);
 
     try {
-      const customer = await stripe.customers.create({
-        email: email || undefined,
-        metadata: { clerkUserId },
-      });
-
-      // Calculate trial period
-      const trialStart = new Date();
-      const trialEnd = new Date(trialStart.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-
-      // Insert into Supabase users table
-      const { error } = await supabase.from("subscriptions").insert({
-        user_id: clerkUserId,
-        stripe_customer_id: customer.id,
-        plan: "starter",
-        status: "cancel",
-        trial_start: trialStart.toISOString(),
-        trial_end: trialEnd.toISOString(),
-      });
+      // Insert minimal record into Supabase for free plan
+      const { error } = await supabase
+        .from("subscriptions")
+        .upsert({
+          user_id: clerkUserId,
+          stripe_customer_id: null, // Not created yet
+          plan: "free", // default free plan
+        });
 
       if (error) {
         console.error("❌ Supabase Insert Error:", error.message);
         return new Response("Supabase error", { status: 500 });
       }
 
-      console.log(
-        `✅ User added to Supabase with trial until ${trialEnd.toISOString()}:`,
-        clerkUserId
-      );
+      console.log(`✅ User added to Supabase on free plan: ${clerkUserId}`);
     } catch (err) {
-      console.error("❌ Error creating Stripe customer or Supabase insert:", err);
+      console.error("❌ Error inserting free plan record:", err);
       return new Response("Internal error", { status: 500 });
     }
   }
