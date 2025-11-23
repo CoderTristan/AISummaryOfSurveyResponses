@@ -1,0 +1,58 @@
+import Stripe from "stripe";
+import { redis } from "./redis";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-11-17.clover",
+});
+
+export type STRIPE_SUB_CACHE =
+  | {
+      subscriptionId: string | null;
+      status: Stripe.Subscription.Status;
+      priceId: string | null;
+      cancelAtPeriodEnd: boolean;
+      paymentMethod: {
+        brand: string | null;
+        last4: string | null;
+      } | null;
+    }
+  | { status: "none" };
+
+export async function syncStripeDataToKV(customerId: string) {
+  try {
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      limit: 1,
+      status: "all",
+      expand: ["data.default_payment_method", "data.items.data.price.product"],
+    });
+
+    if (subscriptions.data.length === 0) {
+      const subData: STRIPE_SUB_CACHE = { status: "none" };
+      await redis.set(`customer:${customerId}:subscription`, JSON.stringify(subData));
+      return subData;
+    }
+
+    const subscription = subscriptions.data[0];
+    const subData: STRIPE_SUB_CACHE = {
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      priceId: subscription.items.data[0].price.id,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      paymentMethod:
+        subscription.default_payment_method &&
+        typeof subscription.default_payment_method !== "string"
+          ? {
+              brand: subscription.default_payment_method.card?.brand ?? null,
+              last4: subscription.default_payment_method.card?.last4 ?? null,
+            }
+          : null,
+    };
+
+    await redis.set(`customer:${customerId}:subscription`, JSON.stringify(subData));
+    return subData;
+  } catch (err) {
+    console.error("[syncStripeDataToKV] Error:", err);
+    throw err;
+  }
+}

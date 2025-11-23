@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, MoreHorizontal, Trash2 } from "lucide-react";
 import {
@@ -16,12 +16,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
+interface Project {
+  id: string;
+  name: string;
+}
+
 export default function Projects() {
   const { user } = useUser();
   const userId = user?.id || null;
 
   const [open, setOpen] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -31,57 +36,55 @@ export default function Projects() {
   const router = useRouter();
 
   // Fetch projects
-  async function fetchProjects() {
+  const fetchProjects = useCallback(async () => {
+    if (!userId) return;
     try {
       const data = await getUserProjects();
       setProjects(data || []);
     } catch (error) {
       console.error("Failed to fetch projects:", error);
     }
-  }
+  }, [userId]);
 
   // Check subscription / plan status
   useEffect(() => {
     if (!userId) return;
 
-    async function checkSubscription() {
-  try {
-    const res = await fetch("/api/check-subscription", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
+    const checkSubscription = async () => {
+      try {
+        const res = await fetch("/api/check-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
 
-    const data = await res.json();
-    console.log("Subscription check returned:", data);
+        const data = await res.json();
+        console.log("Subscription check returned:", data);
 
-    if (!data || !data.plan) {
-      setCanCreateProjects(true);
-      setStatusMessage("Free plan active. Upgrade for more features.");
-    } else if (data.plan === "free") {
-      setCanCreateProjects(true);
-      setStatusMessage("Free plan active. Upgrade for more features.");
-    } else if (data.status === "active") {
-      setCanCreateProjects(true);
-      setStatusMessage("Subscription active");
-    } else {
-      setCanCreateProjects(false);
-      setStatusMessage("Your plan is inactive. Please subscribe.");
-    }
-  } catch (err) {
-    console.error("Failed to check subscription:", err);
-    setCanCreateProjects(false);
-    setStatusMessage("Unable to verify plan. Try again later.");
-  }
+        if (!data || !data.plan || data.plan === "free") {
+          setCanCreateProjects(true);
+          setStatusMessage("Free plan active. Upgrade for more features.");
+        } else if (data.status === "active") {
+          setCanCreateProjects(true);
+          setStatusMessage("Subscription active.");
+        } else {
+          setCanCreateProjects(false);
+          setStatusMessage("Your plan is inactive. Please subscribe.");
+        }
+      } catch (err) {
+        console.error("Failed to check subscription:", err);
+        setCanCreateProjects(false);
+        setStatusMessage("Unable to verify plan. Try again later.");
+      }
 
-  await fetchProjects();
-}
-
+      await fetchProjects();
+    };
 
     checkSubscription();
-  }, [userId]);
+  }, [userId, fetchProjects]);
 
-  async function handleCreate() {
+  // Create project
+  const handleCreate = async () => {
     if (!projectName.trim() || !canCreateProjects) return;
 
     setLoading(true);
@@ -99,11 +102,11 @@ export default function Projects() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function handleDelete(projectId: string) {
+  // Delete project
+  const handleDelete = async (projectId: string) => {
     if (!confirm("Are you sure you want to delete this project?")) return;
-
     try {
       await deleteProject(projectId);
       await fetchProjects();
@@ -111,7 +114,7 @@ export default function Projects() {
       console.error("Failed to delete project:", error);
       alert("Error deleting project. Check console.");
     }
-  }
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto py-10 space-y-10">
@@ -159,7 +162,10 @@ export default function Projects() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setMenuOpen(menuOpen === project.id ? null : project.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen(menuOpen === project.id ? null : project.id);
+                }}
               >
                 <MoreHorizontal size={18} />
               </Button>

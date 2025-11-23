@@ -1,12 +1,8 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { stripe } from "@/lib/stripe";
+import { redis } from "@/lib/redis";
 
 export async function POST(req: Request) {
   const payload = await req.text();
@@ -16,15 +12,13 @@ export async function POST(req: Request) {
   const svix_timestamp = (await headerList).get("svix-timestamp");
   const svix_signature = (await headerList).get("svix-signature");
 
-  if (!svix_id || !svix_timestamp || !svix_signature) {
+  if (!svix_id || !svix_timestamp || !svix_signature)
     return new Response("Missing svix headers", { status: 400 });
-  }
 
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET!;
   const wh = new Webhook(webhookSecret);
 
   let event;
-
   try {
     event = wh.verify(payload, {
       "svix-id": svix_id,
@@ -40,26 +34,20 @@ export async function POST(req: Request) {
     const user = event.data;
     const clerkUserId = user.id;
 
-    console.log("🆕 Clerk user created:", clerkUserId);
-
     try {
-      // Insert minimal record into Supabase for free plan
-      const { error } = await supabase
-        .from("subscriptions")
-        .upsert({
-          user_id: clerkUserId,
-          stripe_customer_id: null, // Not created yet
-          plan: "free", // default free plan
-        });
+      const customer = await stripe.customers.create({ metadata: { userId: clerkUserId } });
+      await redis.set(`user:${clerkUserId}:customer`, customer.id);
 
-      if (error) {
-        console.error("❌ Supabase Insert Error:", error.message);
-        return new Response("Supabase error", { status: 500 });
-      }
-
-      console.log(`✅ User added to Supabase on free plan: ${clerkUserId}`);
+      const freeSubscription = {
+        plan: "free",
+        status: "active",
+        items: { data: [] },
+        current_period_end: null,
+      };
+      await redis.set(`customer:${customer.id}:subscription`, JSON.stringify(freeSubscription));
+      console.log(`✅ Stripe customer created & free plan assigned: ${clerkUserId}`);
     } catch (err) {
-      console.error("❌ Error inserting free plan record:", err);
+      console.error("❌ Error creating Stripe customer / free plan:", err);
       return new Response("Internal error", { status: 500 });
     }
   }
