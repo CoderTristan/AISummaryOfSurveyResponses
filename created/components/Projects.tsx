@@ -14,15 +14,17 @@ import { Input } from "@/components/ui/input";
 import { createProject, getUserProjects, deleteProject } from "@/lib/supabaseProjects";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { useUser } from "@clerk/nextjs";
 
 export default function Projects() {
+  const { user } = useUser();
+  const userId = user?.id || null;
+
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
   const [canCreateProjects, setCanCreateProjects] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
@@ -38,41 +40,45 @@ export default function Projects() {
     }
   }
 
-  // Check subscription/trial on mount
+  // Check subscription/trial
   useEffect(() => {
-    async function init() {
-      const { userId } = await auth();
-      setUserId(userId!);
+    if (!userId) return;
 
-      // Fetch trial/subscription info from API
-      const res = await fetch(`/api/check-subscription?userId=${userId}`);
-      const data = await res.json();
+    async function checkSubscription() {
+      try {
+        const res = await fetch(`/api/check-subscription?userId=${userId}`);
+        const data = await res.json();
 
-      if (!data || !data.status) {
-        setCanCreateProjects(false);
-        setStatusMessage("No active subscription. Please subscribe to create projects.");
-      } else if (data.status === "trial") {
-        const now = new Date();
-        if (new Date(data.trial_end) > now) {
+        if (!data || !data.status) {
+          setCanCreateProjects(false);
+          setStatusMessage("No active subscription. Please subscribe to create projects.");
+        } else if (data.status === "trial") {
+          const now = new Date();
+          if (new Date(data.trial_end) > now) {
+            setCanCreateProjects(true);
+            setStatusMessage(`Trial active until ${new Date(data.trial_end).toLocaleDateString()}`);
+          } else {
+            setCanCreateProjects(false);
+            setStatusMessage("Your trial has expired. Please subscribe to continue.");
+          }
+        } else if (data.status === "active") {
           setCanCreateProjects(true);
-          setStatusMessage(`Trial active until ${new Date(data.trial_end).toLocaleDateString()}`);
+          setStatusMessage("Subscription active");
         } else {
           setCanCreateProjects(false);
-          setStatusMessage("Your trial has expired. Please subscribe to continue.");
+          setStatusMessage("Your plan has been cancelled or is inactive.");
         }
-      } else if (data.status === "active") {
-        setCanCreateProjects(true);
-        setStatusMessage("Subscription active");
-      } else {
+      } catch (err) {
+        console.error("Failed to check subscription:", err);
         setCanCreateProjects(false);
-        setStatusMessage("Your plan has been cancelled or is inactive.");
+        setStatusMessage("Unable to verify subscription status.");
       }
 
       await fetchProjects();
     }
 
-    init();
-  }, []);
+    checkSubscription();
+  }, [userId]);
 
   async function handleCreate() {
     if (!projectName.trim() || !canCreateProjects) return;
@@ -108,19 +114,23 @@ export default function Projects() {
 
   return (
     <div className="w-full max-w-6xl mx-auto py-10 space-y-10">
-      {/* Header Row */}
+      {/* Header */}
       <div className="flex items-center justify-between w-full">
         <h1 className="text-4xl font-bold tracking-tight">Projects</h1>
-        <Button className="flex items-center gap-2" onClick={() => setOpen(true)} disabled={!canCreateProjects}>
+        <Button 
+          className="flex items-center gap-2" 
+          onClick={() => setOpen(true)} 
+          disabled={!canCreateProjects}
+        >
           <Plus size={18} />
           New Project
         </Button>
       </div>
 
-      {/* Status Card if trial expired or no subscription */}
+      {/* Subscription / Trial Status Card */}
       {!canCreateProjects && statusMessage && (
-        <div className="p-6 border rounded-lg bg-yellow-50 border-yellow-300 text-yellow-800 flex flex-col md:flex-row justify-between items-center">
-          <p className="mb-4 md:mb-0">{statusMessage}</p>
+        <div className="p-6 border rounded-lg bg-yellow-50 border-yellow-300 text-yellow-800 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
+          <p className="font-semibold">{statusMessage}</p>
           <Link href="/dashboard/pricing">
             <Button variant="outline">View Pricing</Button>
           </Link>
@@ -171,7 +181,7 @@ export default function Projects() {
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Create Project Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -189,7 +199,11 @@ export default function Projects() {
               disabled={loading || !canCreateProjects}
             />
 
-            <Button className="w-full" onClick={handleCreate} disabled={loading || !canCreateProjects}>
+            <Button 
+              className="w-full" 
+              onClick={handleCreate} 
+              disabled={loading || !canCreateProjects}
+            >
               {loading ? "Creating..." : "Create Project"}
             </Button>
 
