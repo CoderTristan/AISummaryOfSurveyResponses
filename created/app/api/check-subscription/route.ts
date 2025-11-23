@@ -18,16 +18,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
   }
 
-  // 1️⃣ Try Redis first
+  // --- Redis Fetch ---
   let customerId = await redis.get<string>(`user:${userId}:customer`);
   let subscription: any = null;
 
   if (customerId) {
-    const subscriptionJson = await redis.get<string>(`customer:${customerId}:subscription`);
-    subscription = subscriptionJson ? JSON.parse(subscriptionJson) : null;
+    const subscriptionRaw = await redis.get(`customer:${customerId}:subscription`);
+
+    if (subscriptionRaw) {
+      subscription =
+        typeof subscriptionRaw === "string"
+          ? JSON.parse(subscriptionRaw)
+          : subscriptionRaw;
+    }
   }
 
-  // 2️⃣ Fallback to Supabase if Redis is empty
+  // --- Supabase fallback ---
   if (!subscription) {
     const { data } = await supabase
       .from("subscriptions")
@@ -37,26 +43,39 @@ export async function POST(req: Request) {
 
     if (data) {
       subscription = data;
-      customerId = data.stripe_customer_id || null;
+      customerId = data.stripe_customer_id || customerId;
     }
   }
 
+  // --- Free user ---
   if (!subscription) {
     return NextResponse.json({
       plan: "free",
       active: false,
-      customerId: null,
       subscription: null,
+      customerId: null,
     });
   }
 
-  // 4️⃣ Return subscription info
+  // --- Extract PriceID ---
+  const priceId =
+    subscription?.items?.data?.[0]?.price?.id ||
+    subscription?.priceId ||
+    subscription?.plan_id ||
+    "unknown";
+
+  const status = subscription.status;
+  const active = status === "active" || status === "trialing";
+
   return NextResponse.json({
     customerId,
     subscription,
-    plan: subscription.priceId || subscription.plan || "paid",
-    active: subscription.status === "active",
-    status: subscription.status,
-    periodEnd: subscription.current_period_end,
+    plan: priceId,
+    active,
+    status,
+    periodEnd:
+      subscription?.current_period_end ||
+      subscription?.items?.data?.[0]?.current_period_end ||
+      null,
   });
 }

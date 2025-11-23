@@ -11,51 +11,58 @@ export default async function PricingPage() {
   const { userId } = await auth();
   if (!userId) throw new Error("Missing userId");
 
-  // 1️⃣ Get customerId from Upstash Redis
+  // --- 1. Get customerId from Redis ---
   const customerId = await redis.get<string>(`user:${userId}:customer`);
 
-  // 2️⃣ Get subscription snapshot
+  // --- 2. Get subscription JSON ---
   let subscription: any = null;
   if (customerId) {
-    const subJson = await redis.get<string>(`customer:${customerId}:subscription`);
-    if (subJson) subscription = JSON.parse(subJson);
+    const raw = await redis.get(`customer:${customerId}:subscription`);
+    if (raw) {
+      subscription = typeof raw === "string" ? JSON.parse(raw) : raw;
+    }
   }
 
-  // 3️⃣ Determine current plan
-  const currentPlan = subscription?.planId || "free";
+  // --- 3. Determine plan ---
+  const currentPriceId =
+    subscription?.items?.data?.[0]?.price?.id ||
+    subscription?.priceId ||
+    "free";
 
-  // 4️⃣ Fetch all active Stripe prices
+  // --- 4. Load Stripe ---
   const Stripe = (await import("stripe")).default;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-11-17.clover",
   });
 
+  // --- 5. Get all active prices ---
   const prices = await stripe.prices.list({
     active: true,
     expand: ["data.product"],
   });
 
-  // 5️⃣ Map prices for UI
   const plans = prices.data
-    .map((p) => {
-      let name = "Untitled Plan";
-      let description = "";
-
-      if (p.product && typeof p.product !== "string" && !p.product.deleted) {
-        name = p.product.name;
-        description = p.product.description || "";
-      }
-
-      return {
-        priceId: p.id,
-        name,
-        price: p.unit_amount ? `$${p.unit_amount / 100}/mo` : "",
-        description,
-        isCurrent: name.toLowerCase() === currentPlan.toLowerCase(),
-        amount: p.unit_amount || 0,
-      };
-    })
+    .map((p) => ({
+      priceId: p.id,
+      name:
+        typeof p.product !== "string" && !p.product.deleted
+          ? p.product.name
+          : "Plan",
+      price: p.unit_amount ? `$${p.unit_amount / 100}/mo` : "",
+      description:
+        typeof p.product !== "string" && !p.product.deleted
+          ? p.product.description || ""
+          : "",
+      amount: p.unit_amount || 0,
+      isCurrent: p.id === currentPriceId,
+    }))
     .sort((a, b) => a.amount - b.amount);
 
-  return <Pricing userId={userId} plans={plans} currentPlan={currentPlan} />;
+  return (
+    <Pricing
+      userId={userId}
+      plans={plans}
+      currentPlan={currentPriceId}
+    />
+  );
 }
