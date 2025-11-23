@@ -18,16 +18,18 @@ export default async function PricingPage() {
   let subscription: any = null;
   if (customerId) {
     const raw = await redis.get(`customer:${customerId}:subscription`);
-    if (raw) {
-      subscription = typeof raw === "string" ? JSON.parse(raw) : raw;
-    }
+    if (raw) subscription = typeof raw === "string" ? JSON.parse(raw) : raw;
   }
 
-  // --- 3. Determine plan ---
-  const currentPriceId =
-    subscription?.items?.data?.[0]?.price?.id ||
-    subscription?.priceId ||
-    "free";
+  // --- 3. Determine current plan by product NAME ---
+  let currentPlan = "free";
+
+  const item = subscription?.items?.data?.[0];
+  const product = item?.price?.product;
+
+  if (product && typeof product !== "string" && !product.deleted) {
+    currentPlan = product.name;
+  }
 
   // --- 4. Load Stripe ---
   const Stripe = (await import("stripe")).default;
@@ -54,7 +56,6 @@ export default async function PricingPage() {
           ? p.product.description || ""
           : "",
       amount: p.unit_amount || 0,
-      isCurrent: p.id === currentPriceId,
     }))
     .sort((a, b) => a.amount - b.amount);
 
@@ -62,7 +63,7 @@ export default async function PricingPage() {
     <Pricing
       userId={userId}
       plans={plans}
-      currentPlan={currentPriceId}
+      currentPlan={currentPlan}
     />
   );
 }
