@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,24 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { createProject, getUserProjects, deleteProject } from "@/lib/supabaseProjects"; // adjust path
+import { createProject, getUserProjects, deleteProject } from "@/lib/supabaseProjects";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 
 export default function Projects() {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState<string | null>(null); // project id for open menu
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [canCreateProjects, setCanCreateProjects] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
   const router = useRouter();
 
+  // Fetch projects
   async function fetchProjects() {
     try {
       const data = await getUserProjects();
@@ -32,12 +38,44 @@ export default function Projects() {
     }
   }
 
+  // Check subscription/trial on mount
   useEffect(() => {
-    fetchProjects();
+    async function init() {
+      const { userId } = await auth();
+      setUserId(userId!);
+
+      // Fetch trial/subscription info from API
+      const res = await fetch(`/api/check-subscription?userId=${userId}`);
+      const data = await res.json();
+
+      if (!data || !data.status) {
+        setCanCreateProjects(false);
+        setStatusMessage("No active subscription. Please subscribe to create projects.");
+      } else if (data.status === "trial") {
+        const now = new Date();
+        if (new Date(data.trial_end) > now) {
+          setCanCreateProjects(true);
+          setStatusMessage(`Trial active until ${new Date(data.trial_end).toLocaleDateString()}`);
+        } else {
+          setCanCreateProjects(false);
+          setStatusMessage("Your trial has expired. Please subscribe to continue.");
+        }
+      } else if (data.status === "active") {
+        setCanCreateProjects(true);
+        setStatusMessage("Subscription active");
+      } else {
+        setCanCreateProjects(false);
+        setStatusMessage("Your plan has been cancelled or is inactive.");
+      }
+
+      await fetchProjects();
+    }
+
+    init();
   }, []);
 
   async function handleCreate() {
-    if (!projectName.trim()) return;
+    if (!projectName.trim() || !canCreateProjects) return;
 
     setLoading(true);
     try {
@@ -73,11 +111,21 @@ export default function Projects() {
       {/* Header Row */}
       <div className="flex items-center justify-between w-full">
         <h1 className="text-4xl font-bold tracking-tight">Projects</h1>
-        <Button className="flex items-center gap-2" onClick={() => setOpen(true)}>
+        <Button className="flex items-center gap-2" onClick={() => setOpen(true)} disabled={!canCreateProjects}>
           <Plus size={18} />
           New Project
         </Button>
       </div>
+
+      {/* Status Card if trial expired or no subscription */}
+      {!canCreateProjects && statusMessage && (
+        <div className="p-6 border rounded-lg bg-yellow-50 border-yellow-300 text-yellow-800 flex flex-col md:flex-row justify-between items-center">
+          <p className="mb-4 md:mb-0">{statusMessage}</p>
+          <Link href="/dashboard/pricing">
+            <Button variant="outline">View Pricing</Button>
+          </Link>
+        </div>
+      )}
 
       <p className="text-muted-foreground text-base">
         Create and manage your survey projects here.
@@ -85,7 +133,7 @@ export default function Projects() {
 
       {/* Projects List */}
       <div className="mt-8 space-y-4">
-        {projects.length === 0 && (
+        {projects.length === 0 && canCreateProjects && (
           <div className="text-gray-400 italic">Your projects will appear here.</div>
         )}
 
@@ -96,7 +144,6 @@ export default function Projects() {
             className="p-6 border rounded-lg hover:shadow-lg transition cursor-pointer flex justify-between items-center"
           >
             <span>{project.name}</span>
-
             <div className="relative">
               <Button
                 variant="outline"
@@ -105,7 +152,6 @@ export default function Projects() {
               >
                 <MoreHorizontal size={18} />
               </Button>
-              
 
               {menuOpen === project.id && (
                 <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
@@ -140,10 +186,10 @@ export default function Projects() {
               placeholder="Project Name"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              disabled={loading}
+              disabled={loading || !canCreateProjects}
             />
 
-            <Button className="w-full" onClick={handleCreate} disabled={loading}>
+            <Button className="w-full" onClick={handleCreate} disabled={loading || !canCreateProjects}>
               {loading ? "Creating..." : "Create Project"}
             </Button>
 

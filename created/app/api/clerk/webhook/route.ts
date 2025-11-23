@@ -9,6 +9,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const TRIAL_DAYS = 14;
+
 export async function POST(req: Request) {
   const payload = await req.text();
   const headerList = headers();
@@ -47,26 +49,40 @@ export async function POST(req: Request) {
 
     console.log("🆕 Clerk user created:", clerkUserId);
 
-    // Create Stripe customer
-    const customer = await stripe.customers.create({
-      email: email || undefined,
-      metadata: { clerkUserId },
-    });
+    try {
+      // Create Stripe customer
+      const customer = await stripe.customers.create({
+        email: email || undefined,
+        metadata: { clerkUserId },
+      });
 
-    // Insert into Supabase users table
-    const { error } = await supabase.from("subscriptions").insert({
-      user_id: clerkUserId,
-      stripe_customer_id: customer.id,
-      status: "starter",
-      plan: "starter",
-    });
+      // Calculate trial period
+      const trialStart = new Date();
+      const trialEnd = new Date(trialStart.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
 
-    if (error) {
-      console.error("❌ Supabase Insert Error:", error.message);
-      return new Response("Supabase error", { status: 500 });
+      // Insert into Supabase users table
+      const { error } = await supabase.from("subscriptions").insert({
+        user_id: clerkUserId,
+        stripe_customer_id: customer.id,
+        plan: "starter",
+        status: "trial",
+        trial_start: trialStart.toISOString(),
+        trial_end: trialEnd.toISOString(),
+      });
+
+      if (error) {
+        console.error("❌ Supabase Insert Error:", error.message);
+        return new Response("Supabase error", { status: 500 });
+      }
+
+      console.log(
+        `✅ User added to Supabase with trial until ${trialEnd.toISOString()}:`,
+        clerkUserId
+      );
+    } catch (err) {
+      console.error("❌ Error creating Stripe customer or Supabase insert:", err);
+      return new Response("Internal error", { status: 500 });
     }
-
-    console.log("✅ User added to Supabase:", clerkUserId);
   }
 
   return NextResponse.json({ success: true });
