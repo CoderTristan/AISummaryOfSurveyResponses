@@ -10,8 +10,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 // Upstash Redis
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL!,
-  token: process.env.UPSTASH_REDIS_TOKEN!,
+  url: process.env.UPSTASH_KV_REST_API_URL!,
+  token: process.env.UPSTASH_KV_REST_API_TOKEN!,
 });
 
 export const runtime = "nodejs"; // ensures raw body handling

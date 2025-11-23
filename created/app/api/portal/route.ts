@@ -13,8 +13,8 @@ const supabase = createClient(
 
 // Upstash Redis client
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL!,
-  token: process.env.UPSTASH_REDIS_TOKEN!,
+  url: process.env.UPSTASH_KV_REST_API_URL!,
+  token: process.env.UPSTASH_KV_REST_API_TOKEN!,
 });
 
 export async function POST(req: Request) {
