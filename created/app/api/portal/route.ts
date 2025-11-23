@@ -11,13 +11,12 @@ export async function POST(req: Request) {
 
   const portal = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${APP_URL}dashboard`,
+    return_url: `${APP_URL}/dashboard/projects`,
   });
 
   return NextResponse.json({ url: portal.url });
 }
 
-// EXAMPLE — replace this
 async function findCustomerIdForUser(userId: string) {
   return "cus_xyz123";
 }

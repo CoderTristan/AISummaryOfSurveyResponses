@@ -13,7 +13,7 @@ const supabase = createClient(
 export default async function PricingPage() {
   const { userId } = await auth();
 
-  // ---- READ PLAN FROM SUPABASE ----
+  // Get the current user's plan from Supabase
   const { data: userRow } = await supabase
     .from("subscriptions")
     .select("plan")
@@ -22,33 +22,34 @@ export default async function PricingPage() {
 
   const currentPlan = userRow?.plan || null;
 
-  // ---- FETCH PRICES FROM STRIPE ----
+  // Fetch all active Stripe prices
   const prices = await stripe.prices.list({
     active: true,
     expand: ["data.product"],
   });
 
-  // ---- MAP PRICES INTO PLANS ----
+  // Map prices to plans including description
   const plans = prices.data
     .map((p) => {
       let name = "Untitled Plan";
+      let description = "";
 
       if (p.product && typeof p.product !== "string" && !p.product.deleted) {
         name = p.product.name;
+        description = p.product.description || "";
       }
 
       return {
         priceId: p.id,
         name,
         price: p.unit_amount ? `$${p.unit_amount / 100}/mo` : "",
-        isCurrent:
-          currentPlan &&
-          name.toLowerCase() === currentPlan.toLowerCase(),
+        description,
+        isCurrent: currentPlan && name.toLowerCase() === currentPlan.toLowerCase(),
         amount: p.unit_amount || 0,
       };
     })
-    // ---- SORT DYNAMICALLY BY PRICE ----
+    // Sort plans by amount ascending (cheapest first)
     .sort((a, b) => a.amount - b.amount);
 
-  return <Pricing userId={userId!} plans={plans} />;
+  return <Pricing userId={userId!} plans={plans} currentPlan={currentPlan} />;
 }
