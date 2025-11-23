@@ -14,7 +14,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_KV_REST_API_TOKEN!,
 });
 
-export const runtime = "nodejs"; // ensures raw body handling
+export const runtime = "nodejs"; // raw body support
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -33,48 +33,63 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
-    console.error("⚠️ Webhook signature verification failed:", err?.message ?? err);
+    console.error("⚠️ Webhook signature verification failed:", err?.message);
     return new NextResponse("Invalid signature", { status: 400 });
   }
 
   const type = event.type;
   const data = event.data.object as any;
-  const customerId = data?.customer ?? (data?.billing_reason ? data?.customer : null);
+  const customerId = data?.customer;
 
   if (!customerId) {
-    console.log(`[stripe:webhook] no customer id for event ${type}; ignoring`);
+    console.log(`[stripe:webhook] Event ${type} has no customer; ignoring.`);
     return NextResponse.json({ received: true });
   }
 
-  async function writeSubscriptionToRedis(subscriptionId: string) {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    await redis.set(`customer:${customerId}:subscription`, JSON.stringify(subscription));
-    console.log(`[stripe:webhook] Redis updated for ${customerId} (sub: ${subscription.id}, eventId: ${event.id})`);
+  // Helper: always save EXPANDED subscription data
+  async function saveExpandedSubscription(subscriptionId: string) {
+    const expanded = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ["items.data.price.product"],
+    });
+
+    await redis.set(
+      `customer:${customerId}:subscription`,
+      JSON.stringify(expanded)
+    );
+
+    console.log(
+      `[stripe:webhook] Saved subscription for ${customerId}, sub: ${expanded.id}`
+    );
   }
 
   try {
     switch (type) {
+      //
+      // 🔥 Subscription lifecycle events
+      //
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
-        await redis.set(`customer:${customerId}:subscription`, JSON.stringify(data));
-        console.log(`[stripe:webhook] stored subscription snapshot for ${customerId} (event: ${type}, sub: ${data.id})`);
+        await saveExpandedSubscription(data.id);
         break;
 
+      //
+      // 🔥 Payments that can update subscription state
+      //
       case "invoice.payment_succeeded":
       case "invoice.payment_failed":
       case "checkout.session.completed":
         if (data.subscription) {
-          await writeSubscriptionToRedis(data.subscription);
+          await saveExpandedSubscription(data.subscription);
         }
         break;
 
       default:
-        console.log(`[stripe:webhook] unhandled event type: ${type}`);
+        console.log(`[stripe:webhook] Unhandled event type: ${type}`);
         break;
     }
   } catch (err) {
-    console.error(`[stripe:webhook] error processing event ${type}:`, err);
+    console.error(`[stripe:webhook] Error processing event ${type}:`, err);
     return new NextResponse("Webhook processing error", { status: 500 });
   }
 
