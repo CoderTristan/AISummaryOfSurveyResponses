@@ -1,4 +1,3 @@
-// app/api/checkout/route.ts
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
@@ -28,49 +27,43 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1️⃣ Get or create Stripe customer
+  // 1️⃣ Check if user already has a Stripe customer
   let customerId = await redis.get<string>(`user:${userId}:customer`);
+
   if (!customerId) {
-    const customer = await stripe.customers.create({ metadata: { userId } });
+    // 2️⃣ Create new Stripe customer
+    const customer = await stripe.customers.create({
+      metadata: { userId },
+    });
     customerId = customer.id;
 
+    // Save Redis mappings
     await redis.set(`user:${userId}:customer`, customerId);
     await redis.set(`customer:${customerId}:user`, userId);
 
-    // Create minimal Supabase record
-    await supabase
-      .from("subscriptions")
-      .upsert({ user_id: userId, stripe_customer_id: customerId, plan: "free" });
+    // Save minimal record in Supabase
+    try {
+      await supabase
+        .from("subscriptions")
+        .upsert({
+          user_id: userId,
+          stripe_customer_id: customerId,
+          plan: "free",
+        });
+    } catch (err) {
+      console.error("Supabase upsert failed:", err);
+    }
   }
 
-  // 2️⃣ Get current active subscription
-  const subs = await stripe.subscriptions.list({
+  // 3️⃣ Create the Checkout Session
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
     customer: customerId,
-    status: "active",
-    limit: 1,
-  });
-
-  const activeSub = subs.data[0];
-
-  // 3️⃣ If there's an active subscription, cancel immediately with proration
-  if (activeSub) {
-    await stripe.subscriptions.update(activeSub.id, {
-      cancel_at_period_end: false,
-      proration_behavior: "create_prorations",
-    });
-  }
-
-  // 4️⃣ Create new subscription with the selected price
-  const newSub = await stripe.subscriptions.create({
-    customer: customerId,
-    items: [{ price: priceId, quantity: 1 }],
-    payment_behavior: "default_incomplete", // ensures no card prompt if one exists
-    expand: ["latest_invoice.payment_intent"],
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: `${APP_URL}/dashboard/projects?success=1`,
+    cancel_url: `${APP_URL}/pricing?canceled=1`,
     metadata: { userId },
   });
 
-  // 5️⃣ Save subscription snapshot in Redis
-  await redis.set(`customer:${customerId}:subscription`, JSON.stringify(newSub));
-
-  return NextResponse.json({ url: `${APP_URL}/dashboard/projects?success=1`, subscriptionId: newSub.id });
+  return NextResponse.json({ url: session.url, sessionId: session.id });
 }
