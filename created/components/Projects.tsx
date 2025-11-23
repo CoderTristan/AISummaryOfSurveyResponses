@@ -53,6 +53,7 @@ export default function Projects() {
     });
 
     const data = await res.json();
+    console.log("Subscription check returned:", data);
 
     if (!data || !data.plan) {
       setCanCreateProjects(true);
