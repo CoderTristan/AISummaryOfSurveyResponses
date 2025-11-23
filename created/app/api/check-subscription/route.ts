@@ -41,7 +41,6 @@ export async function POST(req: Request) {
     }
   }
 
-  // 3️⃣ Default free plan if nothing found
   if (!subscription) {
     return NextResponse.json({
       plan: "free",

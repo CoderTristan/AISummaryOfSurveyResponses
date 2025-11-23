@@ -45,32 +45,37 @@ export default function Projects() {
     if (!userId) return;
 
     async function checkSubscription() {
-      try {
-        const res = await fetch(`/api/check-subscription?userId=${userId}`);
-        const data = await res.json();
+  try {
+    const res = await fetch("/api/check-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
 
-        if (!data || !data.plan) {
-          // No Stripe customer yet → default to free plan
-          setCanCreateProjects(true);
-          setStatusMessage("Free plan active. Upgrade for more features.");
-        } else if (data.plan === "free") {
-          setCanCreateProjects(true);
-          setStatusMessage("Free plan active. Upgrade for more features.");
-        } else if (data.status === "active") {
-          setCanCreateProjects(true);
-          setStatusMessage("Subscription active");
-        } else {
-          setCanCreateProjects(false);
-          setStatusMessage("Your plan is inactive. Please subscribe.");
-        }
-      } catch (err) {
-        console.error("Failed to check subscription:", err);
-        setCanCreateProjects(false);
-        setStatusMessage("Unable to verify plan. Try again later.");
-      }
+    const data = await res.json();
 
-      await fetchProjects();
+    if (!data || !data.plan) {
+      setCanCreateProjects(true);
+      setStatusMessage("Free plan active. Upgrade for more features.");
+    } else if (data.plan === "free") {
+      setCanCreateProjects(true);
+      setStatusMessage("Free plan active. Upgrade for more features.");
+    } else if (data.status === "active") {
+      setCanCreateProjects(true);
+      setStatusMessage("Subscription active");
+    } else {
+      setCanCreateProjects(false);
+      setStatusMessage("Your plan is inactive. Please subscribe.");
     }
+  } catch (err) {
+    console.error("Failed to check subscription:", err);
+    setCanCreateProjects(false);
+    setStatusMessage("Unable to verify plan. Try again later.");
+  }
+
+  await fetchProjects();
+}
+
 
     checkSubscription();
   }, [userId]);
