@@ -1,7 +1,6 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
 import { redis } from "@/lib/redis";
 
 export async function POST(req: Request) {
@@ -35,19 +34,18 @@ export async function POST(req: Request) {
     const clerkUserId = user.id;
 
     try {
-      const customer = await stripe.customers.create({ metadata: { userId: clerkUserId } });
-      await redis.set(`user:${clerkUserId}:customer`, customer.id);
-
+      // Store free plan directly in Redis
       const freeSubscription = {
         plan: "free",
         status: "active",
         items: { data: [] },
         current_period_end: null,
       };
-      await redis.set(`customer:${customer.id}:subscription`, JSON.stringify(freeSubscription));
-      console.log(`✅ Stripe customer created & free plan assigned: ${clerkUserId}`);
+      await redis.set(`user:${clerkUserId}:subscription`, JSON.stringify(freeSubscription));
+
+      console.log(`✅ Free plan assigned in Redis for new user: ${clerkUserId}`);
     } catch (err) {
-      console.error("❌ Error creating Stripe customer / free plan:", err);
+      console.error("❌ Error assigning free plan in Redis:", err);
       return new Response("Internal error", { status: 500 });
     }
   }

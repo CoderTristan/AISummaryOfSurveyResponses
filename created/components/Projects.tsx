@@ -146,47 +146,61 @@ export default function Projects() {
       </p>
 
       {/* Projects List */}
-      <div className="mt-8 space-y-4">
-        {projects.length === 0 && canCreateProjects && (
-          <div className="text-gray-400 italic">Your projects will appear here.</div>
-        )}
+<div className="mt-8 space-y-4">
+  {!canCreateProjects && (
+    <div className="w-full p-10 border rounded-xl bg-yellow-50 border-yellow-300 text-yellow-800 text-center flex flex-col items-center justify-center space-y-4">
+      <h2 className="text-2xl font-bold">Subscription Required</h2>
+      <p className="text-gray-700">
+        You need an active subscription to create projects. Upgrade your plan to get started.
+      </p>
+      <Link href="/pricing">
+        <Button variant="outline">View Pricing</Button>
+      </Link>
+    </div>
+  )}
 
-        {projects.map((project) => (
-          <Link
-            key={project.id}
-            href={`/dashboard/${project.id}/create`}
-            className="p-6 border rounded-lg hover:shadow-lg transition cursor-pointer flex justify-between items-center"
+  {canCreateProjects && projects.length === 0 && (
+    <div className="text-gray-400 italic text-center">Your projects will appear here.</div>
+  )}
+
+  {canCreateProjects &&
+    projects.map((project) => (
+      <Link
+        key={project.id}
+        href={`/dashboard/${project.id}/create`}
+        className="p-6 border rounded-lg hover:shadow-lg transition cursor-pointer flex justify-between items-center"
+      >
+        <span>{project.name}</span>
+        <div className="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              setMenuOpen(menuOpen === project.id ? null : project.id);
+            }}
           >
-            <span>{project.name}</span>
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMenuOpen(menuOpen === project.id ? null : project.id);
-                }}
-              >
-                <MoreHorizontal size={18} />
-              </Button>
+            <MoreHorizontal size={18} />
+          </Button>
 
-              {menuOpen === project.id && (
-                <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                    onClick={() => handleDelete(project.id)}
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </Button>
-                </div>
-              )}
+          {menuOpen === project.id && (
+            <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2"
+                onClick={() => handleDelete(project.id)}
+              >
+                <Trash2 size={16} />
+                Delete
+              </Button>
             </div>
-          </Link>
-        ))}
-      </div>
+          )}
+        </div>
+      </Link>
+    ))}
+</div>
+
 
       {/* Create Project Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
