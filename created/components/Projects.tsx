@@ -30,8 +30,6 @@ export default function Projects() {
   const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const [canCreateProjects, setCanCreateProjects] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
 
   const router = useRouter();
 
@@ -46,42 +44,13 @@ export default function Projects() {
     }
   }, [userId]);
 
-  /// Only show “Subscription Required” if canCreateProjects is false
-// Only fetch projects if user can create projects
-useEffect(() => {
-  if (!userId) return;
-
-  const checkSubscription = async () => {
-    try {
-      const res = await fetch(`/api/check-subscription?userId=${userId}`);
-      const data = await res.json();
-
-      if (!data || !data.subscription || data.subscription.plan === "free") {
-        setCanCreateProjects(true);
-        setStatusMessage("Free plan active. Upgrade for more features.");
-      } else if (data.subscription.status === "active") {
-        setCanCreateProjects(true);
-        setStatusMessage("Subscription active.");
-      } else {
-        setCanCreateProjects(false);
-        setStatusMessage("Your plan is inactive. Please subscribe.");
-      }
-    } catch (err) {
-      console.error("Failed to check subscription:", err);
-      setCanCreateProjects(false);
-      setStatusMessage("Unable to verify plan. Try again later.");
-    }
-
-    if (canCreateProjects) await fetchProjects();
-  };
-
-  checkSubscription();
-}, [userId, fetchProjects]);
-
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   // Create project
   const handleCreate = async () => {
-    if (!projectName.trim() || !canCreateProjects) return;
+    if (!projectName.trim()) return;
 
     setLoading(true);
     try {
@@ -119,84 +88,59 @@ useEffect(() => {
         <h1 className="text-4xl font-bold tracking-tight">Projects</h1>
         <Button 
           className="flex items-center gap-2" 
-          onClick={() => setOpen(true)} 
-          disabled={!canCreateProjects}
+          onClick={() => setOpen(true)}
         >
           <Plus size={18} />
           New Project
         </Button>
       </div>
 
-      {/* Plan Status Card */}
-      {statusMessage && (
-        <div className="p-6 border rounded-lg bg-yellow-50 border-yellow-300 text-yellow-800 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
-          <p className="font-semibold">{statusMessage}</p>
-          <Link href="/pricing">
-            <Button variant="outline">View Pricing</Button>
-          </Link>
-        </div>
-      )}
-
       <p className="text-muted-foreground text-base">
         Create and manage your survey projects here.
       </p>
 
       {/* Projects List */}
-<div className="mt-8 space-y-4">
-  {!canCreateProjects && (
-    <div className="w-full p-10 border rounded-xl bg-yellow-50 border-yellow-300 text-yellow-800 text-center flex flex-col items-center justify-center space-y-4">
-      <h2 className="text-2xl font-bold">Subscription Required</h2>
-      <p className="text-gray-700">
-        You need an active subscription to create projects. Upgrade your plan to get started.
-      </p>
-      <Link href="/pricing">
-        <Button variant="outline">View Pricing</Button>
-      </Link>
-    </div>
-  )}
+      <div className="mt-8 space-y-4">
+        {projects.length === 0 && (
+          <div className="text-gray-400 italic text-center">Your projects will appear here.</div>
+        )}
 
-  {canCreateProjects && projects.length === 0 && (
-    <div className="text-gray-400 italic text-center">Your projects will appear here.</div>
-  )}
-
-  {canCreateProjects &&
-    projects.map((project) => (
-      <Link
-        key={project.id}
-        href={`/dashboard/${project.id}/create`}
-        className="p-6 border rounded-lg hover:shadow-lg transition cursor-pointer flex justify-between items-center"
-      >
-        <span>{project.name}</span>
-        <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.preventDefault();
-              setMenuOpen(menuOpen === project.id ? null : project.id);
-            }}
+        {projects.map((project) => (
+          <Link
+            key={project.id}
+            href={`/dashboard/${project.id}/create`}
+            className="p-6 border rounded-lg hover:shadow-lg transition cursor-pointer flex justify-between items-center"
           >
-            <MoreHorizontal size={18} />
-          </Button>
-
-          {menuOpen === project.id && (
-            <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
+            <span>{project.name}</span>
+            <div className="relative">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="w-full justify-start gap-2"
-                onClick={() => handleDelete(project.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen(menuOpen === project.id ? null : project.id);
+                }}
               >
-                <Trash2 size={16} />
-                Delete
+                <MoreHorizontal size={18} />
               </Button>
-            </div>
-          )}
-        </div>
-      </Link>
-    ))}
-</div>
 
+              {menuOpen === project.id && (
+                <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    onClick={() => handleDelete(project.id)}
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Link>
+        ))}
+      </div>
 
       {/* Create Project Modal */}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -213,13 +157,13 @@ useEffect(() => {
               placeholder="Project Name"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              disabled={loading || !canCreateProjects}
+              disabled={loading}
             />
 
             <Button 
               className="w-full" 
               onClick={handleCreate} 
-              disabled={loading || !canCreateProjects}
+              disabled={loading}
             >
               {loading ? "Creating..." : "Create Project"}
             </Button>

@@ -27,11 +27,18 @@ export function DashboardSidebar() {
           <SidebarMenu>
 
             {isProjectsPage ? (
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/dashboard/projects">Projects</Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/dashboard/projects">Projects</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/dashboard/subscriptions">Manage Subscriptions</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
             ) : (
               <>
                 <SidebarMenuItem>
