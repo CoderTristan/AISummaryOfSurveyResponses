@@ -46,42 +46,38 @@ export default function Projects() {
     }
   }, [userId]);
 
-  // Check subscription / plan status
-  useEffect(() => {
-    if (!userId) return;
+  /// Only show “Subscription Required” if canCreateProjects is false
+// Only fetch projects if user can create projects
+useEffect(() => {
+  if (!userId) return;
 
-    const checkSubscription = async () => {
-      try {
-        const res = await fetch("/api/check-subscription", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        });
+  const checkSubscription = async () => {
+    try {
+      const res = await fetch(`/api/check-subscription?userId=${userId}`);
+      const data = await res.json();
 
-        const data = await res.json();
-        console.log("Subscription check returned:", data);
-
-        if (!data || !data.plan || data.plan === "free") {
-          setCanCreateProjects(true);
-          setStatusMessage("Free plan active. Upgrade for more features.");
-        } else if (data.status === "active") {
-          setCanCreateProjects(true);
-          setStatusMessage("Subscription active.");
-        } else {
-          setCanCreateProjects(false);
-          setStatusMessage("Your plan is inactive. Please subscribe.");
-        }
-      } catch (err) {
-        console.error("Failed to check subscription:", err);
+      if (!data || !data.subscription || data.subscription.plan === "free") {
+        setCanCreateProjects(true);
+        setStatusMessage("Free plan active. Upgrade for more features.");
+      } else if (data.subscription.status === "active") {
+        setCanCreateProjects(true);
+        setStatusMessage("Subscription active.");
+      } else {
         setCanCreateProjects(false);
-        setStatusMessage("Unable to verify plan. Try again later.");
+        setStatusMessage("Your plan is inactive. Please subscribe.");
       }
+    } catch (err) {
+      console.error("Failed to check subscription:", err);
+      setCanCreateProjects(false);
+      setStatusMessage("Unable to verify plan. Try again later.");
+    }
 
-      await fetchProjects();
-    };
+    if (canCreateProjects) await fetchProjects();
+  };
 
-    checkSubscription();
-  }, [userId, fetchProjects]);
+  checkSubscription();
+}, [userId, fetchProjects]);
+
 
   // Create project
   const handleCreate = async () => {

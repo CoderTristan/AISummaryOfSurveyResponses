@@ -7,19 +7,21 @@ export default async function PricingPage() {
   const { userId } = await auth();
   if (!userId) throw new Error("Missing userId");
 
-  // Get user's subscription from Redis
-  const subscriptionRaw = await redis.get(`user:${userId}:subscription`);
-  const subscription = subscriptionRaw
-    ? typeof subscriptionRaw === "string"
-      ? JSON.parse(subscriptionRaw)
-      : subscriptionRaw
-    : { plan: "free", status: "active", items: { data: [] }, current_period_end: null };
+  const customerId = await redis.get<string>(`user:${userId}:customer`);
+
+  // Get subscription from Redis or default free
+  const subscriptionRaw = customerId ? await redis.get(`customer:${customerId}:subscription`) : null;
+  const subscription = subscriptionRaw ? JSON.parse(subscriptionRaw as string) : { plan: "free", status: "active" };
 
   // Determine current plan
   let currentPlan = subscription.plan || "free";
 
-  // Fetch all active Stripe prices (for paid plans)
-  const prices = await stripe.prices.list({ active: true, expand: ["data.product"] });
+  // Fetch Stripe prices for paid plans only
+  const prices = await stripe.prices.list({
+    active: true,
+    expand: ["data.product"],
+  });
+
   const plans = prices.data
     .map((p) => ({
       priceId: p.id,

@@ -10,6 +10,7 @@ export type STRIPE_SUB_CACHE =
       subscriptionId: string | null;
       status: Stripe.Subscription.Status;
       priceId: string | null;
+      productId: string | null;
       cancelAtPeriodEnd: boolean;
       paymentMethod: {
         brand: string | null;
@@ -20,11 +21,12 @@ export type STRIPE_SUB_CACHE =
 
 export async function syncStripeDataToKV(customerId: string) {
   try {
+    // ✅ Only expand up to 4 levels: items.data.price, default_payment_method
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       limit: 1,
       status: "all",
-      expand: ["data.default_payment_method", "data.items.data.price.product"],
+      expand: ["data.default_payment_method", "data.items.data.price"], // removed `.product`
     });
 
     if (subscriptions.data.length === 0) {
@@ -34,10 +36,20 @@ export async function syncStripeDataToKV(customerId: string) {
     }
 
     const subscription = subscriptions.data[0];
+    const item = subscription.items.data[0];
+    let productId: string | null = null;
+
+    // If you need product info, fetch separately
+    if (item.price.product && typeof item.price.product === "string") {
+      const product = await stripe.products.retrieve(item.price.product);
+      productId = product.id;
+    }
+
     const subData: STRIPE_SUB_CACHE = {
       subscriptionId: subscription.id,
       status: subscription.status,
-      priceId: subscription.items.data[0].price.id,
+      priceId: item.price.id,
+      productId,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       paymentMethod:
         subscription.default_payment_method &&

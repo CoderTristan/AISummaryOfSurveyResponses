@@ -34,7 +34,6 @@ export async function POST(req: Request) {
     const clerkUserId = user.id;
 
     try {
-      // Store free plan directly in Redis
       const freeSubscription = {
         plan: "free",
         status: "active",
@@ -43,9 +42,9 @@ export async function POST(req: Request) {
       };
       await redis.set(`user:${clerkUserId}:subscription`, JSON.stringify(freeSubscription));
 
-      console.log(`✅ Free plan assigned in Redis for new user: ${clerkUserId}`);
+      console.log(`✅ Free plan assigned for new user: ${clerkUserId}`);
     } catch (err) {
-      console.error("❌ Error assigning free plan in Redis:", err);
+      console.error("❌ Error assigning free plan:", err);
       return new Response("Internal error", { status: 500 });
     }
   }
