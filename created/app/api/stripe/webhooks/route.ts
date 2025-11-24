@@ -23,28 +23,33 @@ export async function POST(req: Request) {
 	try {
 		switch (event.type) {
 			case 'checkout.session.completed': {
-				const session = event.data.object as Stripe.Checkout.Session;
-				if (session.mode === 'subscription') {
-					const clerkId = session.metadata?.clerkId;
-					const priceId = session.metadata?.priceId;
-					const subscriptionId = session.subscription as string;
+  const session = event.data.object as Stripe.Checkout.Session;
+  if (session.mode === 'subscription') {
+    const clerkId = session.metadata?.clerkId;
+    const priceId = session.metadata?.priceId;
+    const subscriptionId = session.subscription as string;
 
-					if (!clerkId || !priceId) throw new Error('Missing metadata from checkout session');
+    if (!clerkId || !priceId) throw new Error('Missing metadata from checkout session');
 
-					const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-					const plan = PLANS.find(p => p.stripePriceId === priceId);
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const plan = PLANS.find(p => p.stripePriceId === priceId);
 
-					await supabaseAdmin.from('subscriptions').upsert({
-						clerk_id: clerkId,
-						stripe_subscription_id: subscription.id,
-						stripe_price_id: priceId,
-						status: subscription.status,
-						plan_name: plan?.name || 'Unknown',
-						current_period_end: new Date(subscription.current_period_end * 1000),
-					});
-				}
-				break;
-			}
+    console.log('Upserting subscription:', { clerkId, subscriptionId, priceId, planName: plan?.name });
+
+    await supabaseAdmin
+      .from('subscriptions')
+      .upsert({
+        clerk_id: clerkId,
+        stripe_subscription_id: subscription.id,
+        stripe_price_id: priceId,
+        status: subscription.status,
+        plan_name: plan?.name || 'Unknown',
+        current_period_end: new Date(subscription.current_period_end * 1000),
+      });
+  }
+  break;
+}
+
 
 			case 'invoice.payment_succeeded': {
 				const invoice = event.data.object as Stripe.Invoice;

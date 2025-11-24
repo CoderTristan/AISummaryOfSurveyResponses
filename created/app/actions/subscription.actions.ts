@@ -38,7 +38,7 @@ mode: 'subscription',
 payment_method_types: ['card'],
 customer: stripeCustomerId,
 line_items: [{ price: priceId, quantity: 1 }],
-success_url: `${process.env.APP_URL}/dashboard/subscriptions?success=true`,
+success_url: `${process.env.APP_URL}/dashboard/projects?success=true`,
 cancel_url: `${process.env.APP_URL}/pricing`,
 metadata: { clerkId: userId, priceId },
 });
