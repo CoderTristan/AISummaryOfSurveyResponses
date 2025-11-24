@@ -16,13 +16,18 @@ export default function Pricing({
   plans,
   currentPlan,
 }: {
-  userId: string;
+  userId: string | null;    // <-- FIXED
   plans: Plan[];
   currentPlan: string;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSelect = async (priceId: string) => {
+    if (!userId) {
+      window.location.href = "/sign-in";
+      return;
+    }
+
     setLoading(priceId);
 
     try {
