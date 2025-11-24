@@ -31,3 +31,12 @@ html: `
 `,
 });
 }
+
+export const sendPaymentFailedEmail = async (userEmail: string) => {
+await resend.emails.send({
+from: 'billing@yoursite.com',
+to: userEmail,
+subject: 'Your Payment Failed',
+html: '<p>Your subscription payment failed. Please update your payment method.</p>',
+});
+};

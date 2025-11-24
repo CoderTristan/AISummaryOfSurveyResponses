@@ -1,47 +1,86 @@
-import { Webhook } from "svix";
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
-import { redis } from "@/lib/redis";
+import { Webhook } from 'svix';
+import { headers } from 'next/headers';
+import { WebhookEvent } from '@clerk/nextjs/server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { NextResponse } from 'next/server';
+
+const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
 export async function POST(req: Request) {
-  const payload = await req.text();
-  const headerList = headers();
+	if (!WEBHOOK_SECRET) {
+		return new Response('Error: CLERK_WEBHOOK_SECRET not set', { status: 500 });
+	}
 
-  const svix_id = (await headerList).get("svix-id");
-  const svix_timestamp = (await headerList).get("svix-timestamp");
-  const svix_signature = (await headerList).get("svix-signature");
+	const headerPayload = headers();
+	const svix_id = (await headerPayload).get('svix-id');
+	const svix_timestamp = (await headerPayload).get('svix-timestamp');
+	const svix_signature = (await headerPayload).get('svix-signature');
 
-  if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response("Missing svix headers", { status: 400 });
-  }
+	if (!svix_id || !svix_timestamp || !svix_signature) {
+		return new Response('Error: Missing svix headers', { status: 400 });
+	}
 
-  const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
+	const payload = await req.json();
+	const body = JSON.stringify(payload);
+	const wh = new Webhook(WEBHOOK_SECRET);
+	let evt: WebhookEvent;
 
-  let event;
-  try {
-    event = wh.verify(payload, {
-      "svix-id": svix_id,
-      "svix-timestamp": svix_timestamp,
-      "svix-signature": svix_signature,
-    });
-  } catch (err: any) {
-    console.error("❌ Clerk verification failed:", err.message);
-    return new Response("Invalid signature", { status: 400 });
-  }
+	try {
+		evt = wh.verify(body, {
+			'svix-id': svix_id,
+			'svix-timestamp': svix_timestamp,
+			'svix-signature': svix_signature,
+		}) as WebhookEvent;
+	} catch (err) {
+		console.error('Error verifying Clerk webhook:', err);
+		return new Response('Error occurred', { status: 400 });
+	}
 
-  // 🔥 We ONLY initialize the user record in Redis.
-  // ❗ Do NOT store subscription info here — Stripe handles that.
-  if (event.type === "user.created") {
-    const clerkUserId = event.data.id;
+	const eventType = evt.type;
 
-    // Create a minimal user record
-    await redis.set(
-      `user:${clerkUserId}:customer`,
-      "none" // means user has no Stripe customer yet
-    );
+	if (eventType === 'user.created') {
+		const { id, email_addresses, first_name, last_name } = evt.data;
+		const email = email_addresses[0]?.email_address;
+		if (!email) return NextResponse.json({ error: 'No email address found' }, { status: 400 });
 
-    console.log(`✅ Clerk user created and stored in Redis: ${clerkUserId}`);
-  }
+		const { error } = await supabaseAdmin.from('users').insert({
+			clerk_id: id,
+			email: email,
+			first_name,
+			last_name,
+		});
+		if (error) {
+			console.error('Error inserting new user to Supabase:', error);
+			return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+		}
+	}
 
-  return NextResponse.json({ ok: true });
+	if (eventType === 'user.updated') {
+		const { id, email_addresses, first_name, last_name } = evt.data;
+		const email = email_addresses[0]?.email_address;
+
+		const { error } = await supabaseAdmin.from('users').update({
+			email,
+			first_name,
+			last_name,
+		}).eq('clerk_id', id);
+
+		if (error) {
+			console.error('Error updating user in Supabase:', error);
+			return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+		}
+	}
+
+	if (eventType === 'user.deleted') {
+		const { id } = evt.data;
+		if (!id) return NextResponse.json({ error: 'No user ID provided for deletion' }, { status: 400 });
+
+		const { error } = await supabaseAdmin.from('users').delete().eq('clerk_id', id);
+		if (error) {
+			console.error('Error deleting user from Supabase:', error);
+			return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+		}
+	}
+
+	return new Response('User synced successfully', { status: 200 });
 }

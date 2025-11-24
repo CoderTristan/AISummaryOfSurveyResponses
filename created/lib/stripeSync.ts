@@ -1,5 +1,4 @@
 import Stripe from "stripe";
-import { redis } from "./redis";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-11-17.clover",
@@ -31,7 +30,6 @@ export async function syncStripeDataToKV(customerId: string) {
 
     if (subscriptions.data.length === 0) {
       const subData: STRIPE_SUB_CACHE = { status: "none" };
-      await redis.set(`customer:${customerId}:subscription`, JSON.stringify(subData));
       return subData;
     }
 
@@ -61,7 +59,6 @@ export async function syncStripeDataToKV(customerId: string) {
           : null,
     };
 
-    await redis.set(`customer:${customerId}:subscription`, JSON.stringify(subData));
     return subData;
   } catch (err) {
     console.error("[syncStripeDataToKV] Error:", err);

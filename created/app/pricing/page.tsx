@@ -1,64 +1,38 @@
-import Pricing from "@/components/Pricing";
-import { auth } from "@clerk/nextjs/server";
-import { redis } from "@/lib/redis";
-import { stripe } from "@/lib/stripe";
+import { CheckoutButton } from '@/components/CheckoutButton';
+import { PLANS } from '@/lib/plans';
+import { currentUser } from '@clerk/nextjs/server';
 
 export default async function PricingPage() {
-  const { userId } = await auth();
+	const user = await currentUser();
 
-  // Fetch all Stripe prices (used by both logged-in AND logged-out users)
-  const prices = await stripe.prices.list({
-    active: true,
-    expand: ["data.product"],
-  });
+	return (
+		<div className="p-8">
+			<h1 className="text-3xl font-bold mb-6">Pricing</h1>
 
-  const plans = prices.data
-    .map((p) => {
-      const product =
-        typeof p.product !== "string" && !p.product.deleted
-          ? p.product
-          : null;
+			<div className="flex gap-4">
+				{PLANS.map((plan) => (
+					<div
+						key={plan.slug}
+						className="border border-gray-300 p-4 rounded-lg shadow-sm"
+					>
+						<h2 className="text-xl font-semibold">{plan.name}</h2>
+						<p className="text-lg">${plan.price.monthly}/mo</p>
+						<ul className="list-disc pl-5 my-3">
+							{plan.features.map((feature) => (
+								<li key={feature}>{feature}</li>
+							))}
+						</ul>
 
-      return {
-        priceId: p.id,
-        name: product ? product.name : "Unavailable Plan",
-        price: p.unit_amount ? `$${p.unit_amount / 100}/mo` : "",
-        description: product?.description ?? "",
-        amount: p.unit_amount ?? 0,
-      };
-    })
-    .sort((a, b) => a.amount - b.amount);
-
-  // =========================================================================
-  // LOGGED OUT — User sees pricing, but no free plan is assigned yet
-  // =========================================================================
-  if (!userId) {
-    return <Pricing userId={null} plans={plans} currentPlan="none" />;
-  }
-
-  // =========================================================================
-  // LOGGED IN — Get user's subscription (from Redis)
-  // =========================================================================
-  const customerId = await redis.get<string>(`user:${userId}:customer`);
-  const subscriptionRaw =
-    customerId &&
-    (await redis.get(`customer:${customerId}:subscription`));
-
-  let subscription = { plan: "free", status: "active" };
-
-  try {
-    if (typeof subscriptionRaw === "string") {
-      subscription = JSON.parse(subscriptionRaw);
-    }
-  } catch {
-    console.error("[pricing] Failed to parse subscription from Redis");
-  }
-
-  return (
-    <Pricing
-      userId={userId}
-      plans={plans}
-      currentPlan={subscription.plan || "free"}
-    />
-  );
+						{plan.slug !== 'free' && (
+							<CheckoutButton
+								priceId={plan.stripePriceId!}
+								isLoggedIn={!!user}
+								planName={plan.name}
+							/>
+						)}
+					</div>
+				))}
+			</div>
+		</div>
+	);
 }
