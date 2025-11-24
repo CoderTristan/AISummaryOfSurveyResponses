@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 type Plan = {
   name: string;
-  priceId: string;
+  priceId: string | null;
   price: string;
   description: string;
   amount?: number;
@@ -16,17 +16,19 @@ export default function Pricing({
   plans,
   currentPlan,
 }: {
-  userId: string | null;    // <-- FIXED
+  userId: string | null;
   plans: Plan[];
   currentPlan: string;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
 
-  const handleSelect = async (priceId: string) => {
+  const handleSelect = async (priceId: string | null) => {
     if (!userId) {
       window.location.href = "/sign-in";
       return;
     }
+
+    if (!priceId) return; // Free plan does nothing
 
     setLoading(priceId);
 
@@ -49,45 +51,51 @@ export default function Pricing({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
+    <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8">
       {plans.map((plan) => {
         const isCurrent =
+          userId &&
           plan.name.toLowerCase() === currentPlan.toLowerCase();
 
         return (
           <div
-            key={plan.priceId}
-            className="border rounded-xl p-6 shadow-sm flex flex-col justify-between"
+            key={plan.name}
+            className="
+              border rounded-2xl p-6 shadow-sm bg-white 
+              hover:shadow-md transition-all flex flex-col
+            "
           >
             <div>
-              <h3 className="font-bold text-xl mb-2 flex items-center gap-2">
+              <h3 className="font-bold text-2xl mb-3 flex items-center gap-2">
                 <span>{plan.name}</span>
                 {isCurrent && (
-                  <span className="text-sm font-semibold text-blue-500">
-                    (Current)
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
+                    Current
                   </span>
                 )}
               </h3>
 
-              <p className="text-gray-500 mb-4">{plan.price}</p>
+              <p className="text-gray-800 text-3xl font-semibold mb-3">
+                {plan.price}
+              </p>
 
-              {plan.description && (
-                <p className="text-gray-400 text-sm mb-4">
-                  {plan.description}
-                </p>
-              )}
+              <p className="text-gray-500 text-sm mb-6">
+                {plan.description}
+              </p>
             </div>
 
             <Button
-              className="w-full mt-4"
+              className="w-full mt-auto"
               onClick={() => handleSelect(plan.priceId)}
-              disabled={isCurrent || loading === plan.priceId}
+              disabled={loading === plan.priceId || isCurrent}
             >
-              {loading === plan.priceId
-                ? "Loading..."
+              {!userId
+                ? "Sign in to continue"
                 : isCurrent
                 ? "Current Plan"
-                : "Select"}
+                : loading === plan.priceId
+                ? "Loading..."
+                : "Choose Plan"}
             </Button>
           </div>
         );
