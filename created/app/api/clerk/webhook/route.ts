@@ -5,14 +5,15 @@ import { redis } from "@/lib/redis";
 
 export async function POST(req: Request) {
   const payload = await req.text();
-  const headerList = await headers();
+  const headerList = headers();
 
-  const svix_id = headerList.get("svix-id");
-  const svix_timestamp = headerList.get("svix-timestamp");
-  const svix_signature = headerList.get("svix-signature");
+  const svix_id = (await headerList).get("svix-id");
+  const svix_timestamp = (await headerList).get("svix-timestamp");
+  const svix_signature = (await headerList).get("svix-signature");
 
-  if (!svix_id || !svix_timestamp || !svix_signature)
+  if (!svix_id || !svix_timestamp || !svix_signature) {
     return new Response("Missing svix headers", { status: 400 });
+  }
 
   const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
 
@@ -28,22 +29,18 @@ export async function POST(req: Request) {
     return new Response("Invalid signature", { status: 400 });
   }
 
+  // 🔥 We ONLY initialize the user record in Redis.
+  // ❗ Do NOT store subscription info here — Stripe handles that.
   if (event.type === "user.created") {
     const clerkUserId = event.data.id;
 
-    const freePlan = {
-      plan: "free",
-      status: "active",
-      current_period_end: null,
-      items: { data: [] },
-    };
-
+    // Create a minimal user record
     await redis.set(
-      `user:${clerkUserId}:subscription`,
-      JSON.stringify(freePlan)
+      `user:${clerkUserId}:customer`,
+      "none" // means user has no Stripe customer yet
     );
 
-    console.log(`✅ Free tier stored for: ${clerkUserId}`);
+    console.log(`✅ Clerk user created and stored in Redis: ${clerkUserId}`);
   }
 
   return NextResponse.json({ ok: true });
