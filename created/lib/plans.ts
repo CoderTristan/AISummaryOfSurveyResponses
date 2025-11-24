@@ -11,14 +11,14 @@ name: 'Pro',
 slug: 'pro',
 price: { monthly: 10 },
 features: ['10 Surveys', '1,000 Responses', 'Advanced Analytics'],
-stripePriceId: 'price_PRO_MONTHLY_ID',
+stripePriceId: 'price_1SWJz6QybpDxd0p14KGxP0r2',
 },
 {
 name: 'Premium',
 slug: 'premium',
 price: { monthly: 25 },
 features: ['Unlimited Surveys', 'Unlimited Responses', 'All Features'],
-stripePriceId: 'price_PREMIUM_MONTHLY_ID',
+stripePriceId: 'price_1SWJzNQybpDxd0p1rdpAbN54',
 },
 ] as const;
 

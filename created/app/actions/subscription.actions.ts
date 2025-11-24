@@ -65,6 +65,6 @@ if (!data?.stripe_customer_id) throw new Error('Stripe customer not found.');
 
 const portalSession = await stripe.billingPortal.sessions.create({
 customer: data.stripe_customer_id,
-return_url: `${process.env.NEXT_PUBLIC_URL}/dashboard`,
+return_url: `${process.env.APP_URL}/dashboard/projects`,
 });
 }
