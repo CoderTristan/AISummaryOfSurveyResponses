@@ -33,7 +33,7 @@ export default async function PricingPage() {
   // LOGGED OUT — User sees pricing, but no free plan is assigned yet
   // =========================================================================
   if (!userId) {
-    return <Pricing userId={null} paidPlans={plans} currentPlan="none" />;
+    return <Pricing userId={null} plans={plans} currentPlan="none" />;
   }
 
   // =========================================================================
@@ -57,7 +57,7 @@ export default async function PricingPage() {
   return (
     <Pricing
       userId={userId}
-      paidPlans={plans}
+      plans={plans}
       currentPlan={subscription.plan || "free"}
     />
   );
