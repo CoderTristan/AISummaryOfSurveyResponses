@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectTrigger,
@@ -40,11 +39,8 @@ export default function CreateSurveyPage() {
   const [created, setCreated] = useState<boolean>(false);
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [themeColor, setThemeColor] = useState<string>("#6366f1");
-  const [notifyEnabled, setNotifyEnabled] = useState<boolean>(false);
-  const [notifyEmail, setNotifyEmail] = useState<string>("");
-  const [notifyThreshold, setNotifyThreshold] = useState<number>(100);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  const baseUrl = process.env.APP_URL
 
   const surveyExamples = [
     {
@@ -129,12 +125,6 @@ export default function CreateSurveyPage() {
 
   const handleSubmit = async () => {
     if (!question.trim()) return;
-
-    if (notifyEnabled && notifyEmail.trim() && !/^\S+@\S+\.\S+$/.test(notifyEmail)) {
-      alert("Please enter a valid email address for notifications.");
-      return;
-    }
-
     setLoading(true);
     setCreated(false);
 
@@ -151,10 +141,6 @@ export default function CreateSurveyPage() {
       question,
       type,
       color: themeColor,
-      notify_enabled: notifyEnabled,
-      notify_email: notifyEnabled ? (notifyEmail.trim() || null) : null,
-      notify_threshold: notifyEnabled ? Number(notifyThreshold || 0) : 0,
-      notify_sent: false,
       survey_link,
       survey_iframe,
       survey_script,
@@ -327,39 +313,6 @@ export default function CreateSurveyPage() {
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setThemeColor(e.target.value)}
                     className="w-full h-10 rounded cursor-pointer border mt-1"
                   />
-                </div>
-
-                <div className="pt-2 border-t">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-xs">Email Notifications</Label>
-                    <Switch checked={notifyEnabled} onCheckedChange={(v) => setNotifyEnabled(Boolean(v))} />
-                  </div>
-
-                  {notifyEnabled && (
-                    <div className="space-y-3 pt-2">
-                      <div>
-                        <Label className="text-xs">Email</Label>
-                        <Input
-                          type="email"
-                          placeholder="you@example.com"
-                          value={notifyEmail}
-                          onChange={(e: ChangeEvent<HTMLInputElement>) => setNotifyEmail(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="text-xs">Threshold</Label>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={notifyThreshold}
-                          onChange={(e: ChangeEvent<HTMLInputElement>) => setNotifyThreshold(Number(e.target.value))}
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div className="pt-2">

@@ -45,10 +45,6 @@ export async function createSurvey(payload: {
   question: string;
   type: string;
   color: string;
-  notify_email: string | null;
-  notify_threshold: number;
-  notify_enabled: boolean;
-  notify_sent: boolean;
   survey_link: string;
   survey_iframe: string;
   survey_script: string;

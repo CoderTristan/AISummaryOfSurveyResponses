@@ -32,7 +32,6 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
-import { Input } from "./ui/input";
 
 interface OverviewProps {
   projectId: string;
@@ -52,32 +51,23 @@ export default function Overview({ projectId }: OverviewProps) {
   const [deleting, setDeleting] = useState(false);
 
   async function handleEmailUpdate(updates: any) {
-if (!selectedSurvey) return;
+    if (!selectedSurvey) return;
 
+    try {
+      const newData = {
+        ...selectedSurvey,
+        ...updates,
+      };
 
-try {
-const newData = {
-...selectedSurvey,
-...updates,
-};
+      await updateSurveyEmailFields(selectedSurvey.id, newData);
 
-
-// Reset notify_sent if threshold or email changes
-if (updates.notify_threshold !== undefined || updates.notify_email !== undefined) {
-newData.notify_sent = false;
-}
-
-
-await updateSurveyEmailFields(selectedSurvey.id, newData);
-
-
-setSelectedSurvey(newData);
-setSurveys(prev => prev.map(s => (s.id === selectedSurvey.id ? newData : s)));
-} catch (err) {
-console.error("Failed to update notification settings", err);
-alert("Failed to update email settings.");
-}
-}
+      setSelectedSurvey(newData);
+      setSurveys(prev => prev.map(s => (s.id === selectedSurvey.id ? newData : s)));
+    } catch (err) {
+      console.error("Failed to update notification settings", err);
+      alert("Failed to update email settings.");
+    }
+  }
 
   useEffect(() => {
     if (!projectId) return;
@@ -166,47 +156,46 @@ alert("Failed to update email settings.");
   }
 
   async function handleDeleteAll() {
-  if (!confirm("Delete ALL surveys and ALL responses for this project? This cannot be undone.")) {
-    return;
-  }
-
-  setDeleting(true);
-
-  try {
-    // delete responses for each survey
-    for (const survey of surveys) {
-      try {
-        await deleteResponses(survey.id);
-      } catch (err) {
-        console.error(`Failed to delete responses for survey ${survey.id}`, err);
-      }
+    if (!confirm("Delete ALL surveys and ALL responses for this project? This cannot be undone.")) {
+      return;
     }
 
-    // delete each survey
-    for (const survey of surveys) {
-      try {
-        await deleteSurveys(projectId, survey.id);
-      } catch (err) {
-        console.error(`Failed to delete survey ${survey.id}`, err);
+    setDeleting(true);
+
+    try {
+      // delete responses for each survey
+      for (const survey of surveys) {
+        try {
+          await deleteResponses(survey.id);
+        } catch (err) {
+          console.error(`Failed to delete responses for survey ${survey.id}`, err);
+        }
       }
+
+      // delete each survey
+      for (const survey of surveys) {
+        try {
+          await deleteSurveys(projectId, survey.id);
+        } catch (err) {
+          console.error(`Failed to delete survey ${survey.id}`, err);
+        }
+      }
+
+      // Clear local state
+      setSurveys([]);
+      setResponsesCounts({});
+      setTextResponses({});
+      setStatsDialogOpen(false);
+      setSelectedSurvey(null);
+
+      alert("All surveys and responses have been deleted.");
+    } catch (err) {
+      console.error("Failed to delete everything:", err);
+      alert("Failed to delete all surveys. See console for details.");
+    } finally {
+      setDeleting(false);
     }
-
-    // Clear local state
-    setSurveys([]);
-    setResponsesCounts({});
-    setTextResponses({});
-    setStatsDialogOpen(false);
-    setSelectedSurvey(null);
-
-    alert("All surveys and responses have been deleted.");
-  } catch (err) {
-    console.error("Failed to delete everything:", err);
-    alert("Failed to delete all surveys. See console for details.");
-  } finally {
-    setDeleting(false);
   }
-}
-
 
   async function handleDelete(surveyId: string) {
     if (!confirm("Delete this survey and all its responses?")) return;
@@ -324,26 +313,26 @@ alert("Failed to update email settings.");
                     </div>
 
                     <div className="ml-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal size={18} />
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal size={18} />
+                          </Button>
+                        </DropdownMenuTrigger>
 
-                      <DropdownMenuContent align="end" className="w-32 p-1">
-                        <DropdownMenuItem
-                          className="flex items-center gap-2 text-red-600 hover:bg-red-50"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(survey.id);
-                          }}
-                        >
-                          <Trash size={16} /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                        <DropdownMenuContent align="end" className="w-32 p-1">
+                          <DropdownMenuItem
+                            className="flex items-center gap-2 text-red-600 hover:bg-red-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(survey.id);
+                            }}
+                          >
+                            <Trash size={16} /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -388,197 +377,188 @@ alert("Failed to update email settings.");
       {/* Stats Dialog */}
       <Dialog open={statsDialogOpen} onOpenChange={setStatsDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
-  <DialogHeader className="mb-3">
-  {selectedSurvey && (
-    <div className="flex flex-col gap-2">
-      {/* Question and metadata */}
-      <div>
-        <CardTitle className="text-lg">{selectedSurvey.question}</CardTitle>
-        <p className="text-sm text-gray-500">
-          Type: {selectedSurvey.type} • Created: {new Date(selectedSurvey.created_at).toLocaleString()}
-        </p>
-      </div>
-
-      {/* Color + Delete button */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">Color:</span>
-          <div
-            className="h-6 w-6 rounded-md border border-gray-300"
-            style={{ backgroundColor: selectedSurvey.color }}
-          />
-        </div>
-
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => handleDelete(selectedSurvey.id)}
-          disabled={deleting}
-          className="flex items-center gap-1"
-        >
-          {deleting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
-          <span>Delete Survey</span>
-        </Button>
-      </div>
-    </div>
-  )}
-</DialogHeader>
-
-
-
-  <Tabs defaultValue="stats" className="w-full">
-    <TabsList className="grid grid-cols-3 gap-2 mb-3">
-      <TabsTrigger value="stats">Stats</TabsTrigger>
-      <TabsTrigger value="embeds">Embed Codes</TabsTrigger>
-      <TabsTrigger value="email">Email Alerts</TabsTrigger>
-    </TabsList>
-
-    {/* STATS TAB */}
-    <TabsContent value="stats">
-      {selectedSurvey && (
-        <Card className="shadow-sm">
-          <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto">
-            {selectedSurvey.type === "text" ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">
-                    Free Text Responses ({(textResponses[selectedSurvey.id] || []).length})
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTextResponseOrder(prev => (prev === "asc" ? "desc" : "asc"))}
-                    >
-                      <ArrowUpDown size={14} className="mr-1" />
-                      {textResponseOrder === "asc" ? "Oldest" : "Newest"}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => refreshSurveyResponses(selectedSurvey.id)}>
-                      Refresh
-                    </Button>
-                  </div>
+          <DialogHeader className="mb-3">
+            {selectedSurvey && (
+              <div className="flex flex-col gap-2">
+                {/* Question and metadata */}
+                <div>
+                  <CardTitle className="text-lg">{selectedSurvey.question}</CardTitle>
+                  <p className="text-sm text-gray-500">
+                    Type: {selectedSurvey.type} • Created: {new Date(selectedSurvey.created_at).toLocaleString()}
+                  </p>
                 </div>
 
-                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                  {getOrderedTextResponses(selectedSurvey.id).map((t, idx) => (
-                    <div key={idx} className="bg-gray-50 border border-gray-200 rounded p-3 text-sm">
-                      {t}
+                {/* Color + Delete button */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">Color:</span>
+                    <div
+                      className="h-6 w-6 rounded-md border border-gray-300"
+                      style={{ backgroundColor: selectedSurvey.color }}
+                    />
+                  </div>
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(selectedSurvey.id)}
+                    disabled={deleting}
+                    className="flex items-center gap-1"
+                  >
+                    {deleting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                    <span>Delete Survey</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogHeader>
+
+          <Tabs defaultValue="stats" className="w-full">
+            <TabsList className="grid grid-cols-3 gap-2 mb-3">
+              <TabsTrigger value="stats">Stats</TabsTrigger>
+              <TabsTrigger value="embeds">Embed Codes</TabsTrigger>
+              <TabsTrigger value="email">Email Reports</TabsTrigger>
+            </TabsList>
+
+            {/* STATS TAB */}
+            <TabsContent value="stats">
+              {selectedSurvey && (
+                <Card className="shadow-sm">
+                  <CardContent className="space-y-4 max-h-[60vh] overflow-y-auto">
+                    {selectedSurvey.type === "text" ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">
+                            Free Text Responses ({(textResponses[selectedSurvey.id] || []).length})
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setTextResponseOrder(prev => (prev === "asc" ? "desc" : "asc"))}
+                            >
+                              <ArrowUpDown size={14} className="mr-1" />
+                              {textResponseOrder === "asc" ? "Oldest" : "Newest"}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => refreshSurveyResponses(selectedSurvey.id)}>
+                              Refresh
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                          {getOrderedTextResponses(selectedSurvey.id).map((t, idx) => (
+                            <div key={idx} className="bg-gray-50 border border-gray-200 rounded p-3 text-sm">
+                              {t}
+                            </div>
+                          ))}
+                          {(!textResponses[selectedSurvey.id] || textResponses[selectedSurvey.id].length === 0) && (
+                            <p className="text-gray-500">No responses yet.</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <ul className="space-y-2 max-h-[20vh] overflow-y-auto">
+                          {Object.entries(responsesCounts[selectedSurvey.id] || {})
+                            .sort(([, a], [, b]) => (b as number) - (a as number))
+                            .map(([answer, count]) => (
+                              <li key={answer} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                <span className="font-medium">{answer}</span>
+                                <span className="text-gray-600">{count} {count === 1 ? "vote" : "votes"}</span>
+                              </li>
+                            ))}
+                        </ul>
+
+                        <div style={{ width: "100%", height: 260 }}>
+                          <ResponsiveContainer>
+                            <BarChart data={toChartData(responsesCounts[selectedSurvey.id])}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis allowDecimals={false} />
+                              <Tooltip />
+                              <Bar dataKey="value" fill="#667eea" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* EMBEDS TAB */}
+            <TabsContent value="embeds">
+              {selectedSurvey ? (
+                <Card className="shadow-sm">
+                  {["survey_link", "survey_iframe", "survey_script", "survey_widget"].map(key => (
+                    <div key={key} className="mb-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold">{key.replace("survey_", "").toUpperCase()}</span>
+                        <Button size="sm" variant="outline" onClick={() => copy(selectedSurvey[key] || "", key)}>
+                          {copiedField === key ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+                        </Button>
+                      </div>
+                      <pre className="bg-gray-100 p-1 rounded text-xs font-mono overflow-x-hidden break-words">
+                        {selectedSurvey[key]}
+                      </pre>
                     </div>
                   ))}
-                  {(!textResponses[selectedSurvey.id] || textResponses[selectedSurvey.id].length === 0) && (
-                    <p className="text-gray-500">No responses yet.</p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <ul className="space-y-2 max-h-[20vh] overflow-y-auto">
-                  {Object.entries(responsesCounts[selectedSurvey.id] || {})
-                    .sort(([, a], [, b]) => (b as number) - (a as number))
-                    .map(([answer, count]) => (
-                      <li key={answer} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{answer}</span>
-                        <span className="text-gray-600">{count} {count === 1 ? "vote" : "votes"}</span>
-                      </li>
-                    ))}
-                </ul>
+                </Card>
+              ) : (
+                <p className="text-gray-500">No survey selected.</p>
+              )}
+            </TabsContent>
 
-                <div style={{ width: "100%", height: 260 }}>
-                  <ResponsiveContainer>
-                    <BarChart data={toChartData(responsesCounts[selectedSurvey.id])}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#667eea" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </TabsContent>
+            {/* EMAIL TAB */}
+            <TabsContent value="email">
+              {selectedSurvey ? (
+                <Card className="border-2 shadow-sm">
+                  <CardContent className="space-y-4">
+                    <h2 className="font-semibold text-lg">Email Report Settings</h2>
 
-    {/* EMBEDS TAB */}
-    <TabsContent value="embeds">
-      {selectedSurvey ? (
-        <Card className="shadow-sm">
-            {["survey_link", "survey_iframe", "survey_script", "survey_widget"].map(key => (
-  <div key={key} className="mb-2">
-    <div className="flex items-center gap-2 mb-1">
-      <span className="font-semibold">{key.replace("survey_", "").toUpperCase()}</span>
-      <Button size="sm" variant="outline" onClick={() => copy(selectedSurvey[key] || "", key)}>
-        {copiedField === key ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-      </Button>
-    </div>
-    <pre className="bg-gray-100 p-1 rounded text-xs font-mono overflow-x-hidden break-words">
-      {selectedSurvey[key]}
-    </pre>
-  </div>
-))}
+                    <div className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                      <div>
+                        <p className="font-medium">Enable Email Reports</p>
+                        <p className="text-xs text-gray-500">Receive periodic survey reports via email</p>
+                      </div>
+                      <Switch
+                        checked={selectedSurvey.notify_enabled || false}
+                        onCheckedChange={val => handleEmailUpdate({ notify_enabled: val })}
+                      />
+                    </div>
 
-        </Card>
-      ) : (
-        <p className="text-gray-500">No survey selected.</p>
-      )}
-    </TabsContent>
+                    {selectedSurvey.notify_enabled && (
+                      <div className="space-y-4 pl-4 border-l-2 border-primary/30">
+                        <div className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                          <div className="space-y-1">
+                            <Label className="font-medium">Report Frequency</Label>
+                            <div className="flex items-center gap-4 mt-2">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <Switch
+                                  checked={selectedSurvey.report_frequency === "daily"}
+                                  onCheckedChange={val => handleEmailUpdate({ report_frequency: val ? "daily" : "weekly" })}
+                                />
+                                <span className="text-sm">{selectedSurvey.report_frequency === "daily" ? "Daily" : "Weekly"}</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
 
-    {/* EMAIL TAB */}
-    <TabsContent value="email">
-      {selectedSurvey ? (
-        <Card className="border-2 shadow-sm">
-          <CardContent className="space-y-4">
-            <h2 className="font-semibold text-lg">Email Notification Settings</h2>
-
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-white">
-              <div>
-                <p className="font-medium">Enable Email Alerts</p>
-                <p className="text-xs text-gray-500">Send an email once threshold is met.</p>
-              </div>
-              <Switch
-                checked={selectedSurvey.notify_enabled}
-                onCheckedChange={val => handleEmailUpdate({ notify_enabled: val })}
-              />
-            </div>
-
-            {selectedSurvey.notify_enabled && (
-              <div className="space-y-4 pl-4 border-l-2 border-primary/30">
-                <div className="space-y-2">
-                  <Label>Email Address</Label>
-                  <Input
-                    type="email"
-                    value={selectedSurvey.notify_email || ""}
-                    onChange={e => handleEmailUpdate({ notify_email: e.target.value })}
-                    placeholder="you@example.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Response Threshold</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={selectedSurvey.notify_threshold || 1}
-                    onChange={e => handleEmailUpdate({ notify_threshold: Number(e.target.value) })}
-                  />
-                </div>
-
-                <div className="text-xs text-gray-500">
-                  * Email triggers once threshold is reached.
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <p className="text-gray-500">No survey selected.</p>
-      )}
-    </TabsContent>
-  </Tabs>
-</DialogContent>
-
+                        <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+                          Reports will be sent {selectedSurvey.report_frequency === "daily" ? "every day" : "every week"} with survey statistics and responses.
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <p className="text-gray-500">No survey selected.</p>
+              )}
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
       </Dialog>
     </div>
   );
