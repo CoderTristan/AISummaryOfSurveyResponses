@@ -12,7 +12,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("surveys")
-    .select("id, question, type, project_id")
+    .select("id, question, type, options, project_id")
     .eq("id", surveyId)
     .single();
     

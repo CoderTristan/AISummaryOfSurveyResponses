@@ -42,6 +42,11 @@ export function DashboardSidebar() {
             {/* Only show project-specific links if projectId exists */}
             {projectId && (
               <>
+              <SidebarMenuItem> 
+                <SidebarMenuButton asChild> 
+                  <Link href="/dashboard/projects">Back to Projects</Link> 
+                </SidebarMenuButton> 
+              </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href={`/dashboard/${projectId}/overview`}>Overview</Link>
