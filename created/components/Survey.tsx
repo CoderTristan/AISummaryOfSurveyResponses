@@ -118,6 +118,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
         };
 
   const renderOptions = () => {
+    console.log(survey.options)
     if (survey.type === "yesno") {
       return (
         <div className="flex gap-4 justify-center">
@@ -138,7 +139,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     }
 
     if (survey.type === "multiple" && survey.options?.length) {
-      console.log(survey.options)
+      
       return (
         <div className="flex flex-col gap-3 w-full max-w-2xl mx-auto">
           {survey.options.map((o: string) => (
