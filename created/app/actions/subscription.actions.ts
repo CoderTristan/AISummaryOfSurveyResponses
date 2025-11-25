@@ -67,4 +67,6 @@ const portalSession = await stripe.billingPortal.sessions.create({
 customer: data.stripe_customer_id,
 return_url: `${process.env.APP_URL}/dashboard/projects`,
 });
+
+redirect(portalSession.url)
 }
