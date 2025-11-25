@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState, ChangeEvent } from "react";
 import { Button } from "./ui/button";
@@ -22,6 +22,12 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
         const res = await fetch(`/api/surveys/${surveyId}`);
         if (!res.ok) throw new Error("Survey not found");
         const data = await res.json();
+
+        // Convert Postgres text[] to JS array if needed
+        if (data.type === "multiple" && data.options && typeof data.options === "string") {
+          data.options = data.options.replace(/^{|}$/g, "").split(",");
+        }
+
         setSurvey(data);
       } catch (err) {
         console.error(err);
@@ -30,6 +36,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
         setLoading(false);
       }
     }
+
     loadSurvey();
   }, [surveyId]);
 
@@ -63,62 +70,36 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
   }
 
   if (loading)
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        Loading survey…
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen text-gray-600">Loading survey…</div>;
 
   if (error && !survey)
-    return (
-      <div className="flex items-center justify-center h-screen text-red-600">
-        {error}
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
 
   if (!survey)
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        Survey not found
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen text-gray-600">Survey not found</div>;
 
   const theme = survey.color || "#6366f1"; // fallback indigo
 
   if (submitted)
     return (
       <div className="flex items-center justify-center h-screen p-6 bg-gray-50">
-        <div className="rounded-lg p-8 text-center shadow-lg max-w-2xl w-full border"
+        <div
+          className="rounded-lg p-8 text-center shadow-lg max-w-2xl w-full border"
           style={{ borderColor: theme, backgroundColor: theme + "15" }}
         >
-          <div className="text-4xl mb-2" style={{ color: theme }}>
-            ✓
-          </div>
-          <div className="font-bold mb-2 text-xl" style={{ color: theme }}>
-            Thanks for responding!
-          </div>
-          <div className="text-gray-700 text-base">
-            Your response has been recorded.
-          </div>
+          <div className="text-4xl mb-2" style={{ color: theme }}>✓</div>
+          <div className="font-bold mb-2 text-xl" style={{ color: theme }}>Thanks for responding!</div>
+          <div className="text-gray-700 text-base">Your response has been recorded.</div>
         </div>
       </div>
     );
 
-  // Render choice options with theme color
   const themedButton = (isSelected: boolean) =>
     isSelected
-      ? {
-          backgroundColor: theme,
-          color: "white",
-          borderColor: theme,
-        }
-      : {
-          borderColor: theme,
-          color: theme,
-        };
+      ? { backgroundColor: theme, color: "white", borderColor: theme }
+      : { borderColor: theme, color: theme };
 
   const renderOptions = () => {
-    console.log(survey.options)
     if (survey.type === "yesno") {
       return (
         <div className="flex gap-4 justify-center">
@@ -139,7 +120,6 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     }
 
     if (survey.type === "multiple" && survey.options?.length) {
-      
       return (
         <div className="flex flex-col gap-3 w-full max-w-2xl mx-auto">
           {survey.options.map((o: string) => (
@@ -179,35 +159,30 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     }
 
     if (survey.type === "emoji") {
-  // If the survey doesn't have emojis stored, define them manually
-  const emojis = ["😡", "😕", "😐", "🙂", "🤩"];
-
-  return (
-    <div className="flex gap-4 justify-center">
-      {emojis.map((e) => (
-        <Button
-          key={e}
-          size="lg"
-          onClick={() => setAnswer(e)}
-          style={themedButton(answer === e)}
-          className="text-4xl border-2"
-          variant="outline"
-        >
-          {e}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
+      const emojis = survey.emojis?.length ? survey.emojis : ["😡", "😕", "😐", "🙂", "🤩"];
+      return (
+        <div className="flex gap-4 justify-center">
+          {emojis.map((e) => (
+            <Button
+              key={e}
+              size="lg"
+              onClick={() => setAnswer(e)}
+              style={themedButton(answer === e)}
+              className="text-4xl border-2"
+              variant="outline"
+            >
+              {e}
+            </Button>
+          ))}
+        </div>
+      );
+    }
 
     if (survey.type === "text") {
       return (
         <Textarea
           value={answer}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-            setAnswer(e.target.value)
-          }
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setAnswer(e.target.value)}
           placeholder="Type your answer…"
           className="resize-none max-w-2xl mx-auto w-full border-2"
           style={{ borderColor: theme }}
@@ -216,15 +191,15 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
       );
     }
 
-    return <div className="text-gray-500">No options available</div>;
+    return <div className="text-gray-500 text-center">No options available</div>;
   };
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-6">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-3xl space-y-6 border"
+      <div
+        className="bg-white shadow-lg rounded-xl p-8 w-full max-w-3xl space-y-6 border"
         style={{ borderColor: theme + "40" }}
       >
-        {/* Title with theme color */}
         <div className="text-2xl font-semibold text-center" style={{ color: theme }}>
           {survey.question}
         </div>
@@ -236,17 +211,12 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
           disabled={!answer || submitting}
           size="lg"
           className="w-full"
-          style={{
-            backgroundColor: theme,
-            color: "white",
-          }}
+          style={{ backgroundColor: theme, color: "white" }}
         >
           {submitting ? "Submitting…" : "Submit"}
         </Button>
 
-        <div className="text-xs mt-2 text-center text-gray-500">
-          Powered by OneQ
-        </div>
+        <div className="text-xs mt-2 text-center text-gray-500">Powered by OneQ</div>
       </div>
     </div>
   );

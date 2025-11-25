@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -12,12 +12,16 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  projectId?: string | null;
+}
+
+export function DashboardSidebar({ projectId }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const params = useParams();
-  const projectId = params.projectId;
 
   const isProjectsPage = pathname === "/dashboard/projects";
+  const isSubscriptionsPage = pathname === "/dashboard/subscriptions";
+  const hasProjectId = !!projectId;
 
   return (
     <Sidebar className="top-[60px] h-[calc(100vh-60px)]">
@@ -26,7 +30,8 @@ export function DashboardSidebar() {
           <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarMenu>
 
-            {isProjectsPage ? (
+            {/* Projects & Subscriptions Links */}
+            {isProjectsPage && (
               <>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
@@ -39,20 +44,24 @@ export function DashboardSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </>
-            ) : (
-              <>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/dashboard/projects">Back to Projects</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+            )}
 
+            {isSubscriptionsPage && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/dashboard/projects">Back to Projects</Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+
+            {/* Project-specific Links */}
+            {hasProjectId && (
+              <>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href={`/dashboard/${projectId}/overview`}>Overview</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href={`/dashboard/${projectId}/create`}>Create Survey</Link>
