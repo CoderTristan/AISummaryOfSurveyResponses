@@ -179,9 +179,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
 
     if (survey.type === "emoji") {
   // If the survey doesn't have emojis stored, define them manually
-  const emojis = survey.emojis && survey.emojis.length
-    ? survey.emojis
-    : ["😡", "😕", "😐", "🙂", "🤩"];
+  const emojis = ["😡", "😕", "😐", "🙂", "🤩"];
 
   return (
     <div className="flex gap-4 justify-center">
