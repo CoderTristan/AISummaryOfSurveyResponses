@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { NextResponse } from 'next/server';
+import { deleteUserData } from '@/lib/userData';
 
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
@@ -72,15 +73,18 @@ export async function POST(req: Request) {
 	}
 
 	if (eventType === 'user.deleted') {
-		const { id } = evt.data;
-		if (!id) return NextResponse.json({ error: 'No user ID provided for deletion' }, { status: 400 });
+  const { id } = evt.data;
+  if (!id) return NextResponse.json({ error: 'No user ID provided' }, { status: 400 });
 
-		const { error } = await supabaseAdmin.from('users').delete().eq('clerk_id', id);
-		if (error) {
-			console.error('Error deleting user from Supabase:', error);
-			return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
-		}
-	}
+  try {
+    await deleteUserData(id);
+    return new Response('User and related data deleted successfully', { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return new Response('Failed to delete user data', { status: 500 });
+  }
+}
+
 
 	return new Response('User synced successfully', { status: 200 });
 }
