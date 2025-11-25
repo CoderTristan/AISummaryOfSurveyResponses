@@ -40,3 +40,15 @@ export async function getUserProjects() {
   if (error) throw error;
   return data;
 }
+
+export async function updateProjectEmailFields(id: any, data:any) {
+return supabase
+.from("projects")
+.update({
+notify_enabled: data.notify_enabled,
+notify_email: data.notify_email,
+report_frequency: data.notify_threshold,
+notify_sent: data.notify_sent,
+})
+.eq("id", id);
+}

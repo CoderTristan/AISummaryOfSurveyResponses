@@ -28,17 +28,7 @@ export async function deleteSurveys(projectId: string, surveyId: string) {
   if (error) throw error;
 }
 
-export async function updateSurveyEmailFields(id: any, data:any) {
-return supabase
-.from("surveys")
-.update({
-notify_enabled: data.notify_enabled,
-notify_email: data.notify_email,
-notify_threshold: data.notify_threshold,
-notify_sent: data.notify_sent,
-})
-.eq("id", id);
-}
+
 
 export async function createSurvey(payload: {
   id: string;

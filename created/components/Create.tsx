@@ -82,7 +82,7 @@ export default function CreateSurveyPage() {
       .replaceAll("'", "&#39;");
 
   const generateWidgetCode = (id: string, q: string, t: typeof type, opts: string[]) => {
-    const apiUrl = `${baseUrl}/api/surveys/${id}/responses`;
+    const apiUrl = `${baseUrl}api/surveys/${id}/responses`;
 
     const optionsHtml =
       t === "yesno"
@@ -131,7 +131,7 @@ export default function CreateSurveyPage() {
     const id = crypto.randomUUID();
     setSurveyId(id);
 
-    const survey_link = `${baseUrl}/survey/${id}`;
+    const survey_link = `${baseUrl}survey/${id}`;
     const survey_iframe = `<iframe src="${survey_link}" style="width:100%; height:360px; border:none;"></iframe>`;
     const survey_widget = generateWidgetCode(id, question, type, optionArray());
     const survey_script = `<div id="oneq-${id}"></div><script>(function(){var w=document.getElementById('oneq-${id}');if(!w)return;w.innerHTML=${JSON.stringify(survey_widget)};})();</script>`;
@@ -161,7 +161,7 @@ export default function CreateSurveyPage() {
     }
   };
 
-  const previewLink = surveyId ? `${baseUrl}/survey/${surveyId}` : "";
+  const previewLink = surveyId ? `${baseUrl}survey/${surveyId}` : "";
   const iframeEmbed = surveyId ? `<iframe src="${previewLink}" style="width:100%; height:360px; border:none;"></iframe>` : "";
   const scriptEmbed = surveyId ? `<div id="oneq-${surveyId}"></div>\n<script>\n(function(){var w=document.getElementById('oneq-${surveyId}');if(!w)return;w.innerHTML=${JSON.stringify(generateWidgetCode(surveyId, question, type, optionArray()))};})();\n</script>` : "";
   const widgetEmbed = surveyId ? generateWidgetCode(surveyId, question, type, optionArray()) : "";
