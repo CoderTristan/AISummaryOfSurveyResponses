@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
     console.log('Upserting subscription:', { clerkId, subscriptionId, priceId, planName: plan?.name });
 
-    await supabaseAdmin
+      const { error } = await supabaseAdmin
       .from('subscriptions')
       .upsert({
         clerk_id: clerkId,
@@ -46,6 +46,7 @@ export async function POST(req: Request) {
         plan_name: plan?.name || 'Unknown',
         current_period_end: new Date(subscription.current_period_end * 1000),
       });
+if (error) console.error('Supabase error:', error);
   }
   break;
 }
