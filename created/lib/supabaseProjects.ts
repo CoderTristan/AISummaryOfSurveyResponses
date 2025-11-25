@@ -41,6 +41,19 @@ export async function getUserProjects() {
   return data;
 }
 
+export async function getProject(id: string) {
+  const { userId } = await auth();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .single()
+
+  if (error) throw error;
+  return data;
+}
+
 export async function updateProjectEmailFields(id: any, data:any) {
 return supabase
 .from("projects")
