@@ -237,14 +237,17 @@ export default function Overview({ projectId }: OverviewProps) {
         <h1 className="text-3xl font-bold">Project Overview</h1>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-2 text-red-600 hover:bg-red-50"
-            onClick={() => handleDeleteAll()}
-          >
-            <Trash size={16} /> Delete All
-          </Button>
+          {surveys.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 text-red-600 hover:bg-red-50"
+              onClick={() => handleDeleteAll()}
+            >
+              <Trash size={16} /> Delete All
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"

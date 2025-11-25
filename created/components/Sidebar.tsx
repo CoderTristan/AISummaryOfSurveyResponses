@@ -61,7 +61,7 @@ export function DashboardSidebar() {
 
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href={`/dashboard/${projectId}/email`}>Email Survey</Link>
+                    <Link href={`/dashboard/${projectId}/email`}>Email Settings</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </>

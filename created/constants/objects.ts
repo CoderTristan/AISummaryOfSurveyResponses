@@ -6,9 +6,4 @@ export const navLinks = [
     {
       name: 'Pricing',
       href: '/pricing',
-    },
-    {
-      name: 'Dashboard',
-      href: '/dashboard/projects',
-    },
-]
+    }]

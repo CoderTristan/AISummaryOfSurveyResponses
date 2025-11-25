@@ -24,18 +24,32 @@ export default function Header() {
       </Link>
 
       <nav className="hidden md:flex space-x-2 ml-auto text-sm text-gray-600">
-        {navLinks.map((link: any) => (
-          <Link key={link.name} href={link.href}>
+
+        {/* Only show *public* links to everyone */}
+        {navLinks
+          .filter(link => link.href !== '/dashboard/projects')
+          .map(link => (
+            <Link key={link.name} href={link.href}>
+              <Button 
+                variant="ghost"
+                className="cursor-pointer hover:text-blue-500 hover:bg-white"
+              >
+                {link.name}
+              </Button>
+            </Link>
+          ))}
+
+        {/* Dashboard link ONLY for signed-in users */}
+        <SignedIn>
+          <Link href="/dashboard/projects">
             <Button 
-              variant="ghost" 
+              variant="ghost"
               className="cursor-pointer hover:text-blue-500 hover:bg-white"
             >
-              {link.name}
+              Dashboard
             </Button>
           </Link>
-        ))}
 
-        <SignedIn>
           <UserButton 
             appearance={{
               elements: {

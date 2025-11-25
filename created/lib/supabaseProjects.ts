@@ -60,7 +60,7 @@ return supabase
 .update({
 notify_enabled: data.notify_enabled,
 notify_email: data.notify_email,
-report_frequency: data.notify_threshold,
+report_frequency: data.report_frequency,
 notify_sent: data.notify_sent,
 })
 .eq("id", id);
