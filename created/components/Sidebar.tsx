@@ -23,7 +23,8 @@ export function DashboardSidebar() {
           <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarMenu>
 
-            {/* Always show projects and manage subscriptions */}
+            {!projectId && (
+              <>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="/dashboard/projects">Projects</Link>
@@ -35,6 +36,8 @@ export function DashboardSidebar() {
                 <Link href="/dashboard/subscriptions">Manage Subscriptions</Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            </>
+            )}
 
             {/* Only show project-specific links if projectId exists */}
             {projectId && (
