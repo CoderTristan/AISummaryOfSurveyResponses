@@ -218,11 +218,11 @@ import { useEffect, useState, ChangeEvent } from "react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 
-interface PublicSurveyProps {
+interface OneQWidgetProps {
   surveyId: string;
 }
 
-export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
+export default function OneQWidget({ surveyId }: OneQWidgetProps) {
   const [survey, setSurvey] = useState<any>({
     question: ${JSON.stringify(q)},
     type: ${JSON.stringify(t)},
