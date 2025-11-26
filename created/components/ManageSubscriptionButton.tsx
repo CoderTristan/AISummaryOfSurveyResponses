@@ -2,7 +2,6 @@
 
 import { redirectToCustomerPortal } from '@/app/actions/subscription.actions';
 import { useTransition } from 'react';
-import OneQWidget from './widget';
 
 export function ManageSubscriptionButton() {
 	const [isPending, startTransition] = useTransition();
@@ -26,7 +25,7 @@ export function ManageSubscriptionButton() {
 			>
 				{isPending ? 'Loading...' : 'Manage Subscription'}
 			</button>
-			<OneQWidget />
+			
 		</form>
 	);
 }

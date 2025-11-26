@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Mail, Clock, CheckCircle2, Loader2 } from "lucide-react";
 import { getProject, updateProjectEmailFields} from "@/lib/supabaseProjects";
+import OneQWidget from "./widget";
 
 interface EmailSettingsProps {
   projectId: string;
@@ -225,6 +226,7 @@ export default function EmailSettings({ projectId }: EmailSettingsProps) {
           )}
         </CardContent>
       </Card>
+      <OneQWidget />
     </div>
   );
 }
