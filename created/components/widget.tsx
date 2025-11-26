@@ -4,11 +4,11 @@ import { useEffect, useState, ChangeEvent } from "react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 
-interface PublicSurveyProps {
+interface OneQWidgetProps {
   surveyId: string;
 }
 
-export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
+export default function OneQWidget({ surveyId }: OneQWidgetProps) {
   const [survey, setSurvey] = useState<any>({
     question: "What's your favorite feature?",
     type: "multiple",
@@ -23,7 +23,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     if (!answer) return;
     setSubmitting(true);
     try {
-      await fetch('https://survey-delta-one.vercel.app/api/surveys/8abd5c5f-e2a7-4e0a-afaf-6a83643efa38/responses', {
+      await fetch('https://survey-delta-one.vercel.app/api/surveys/5c8d7309-110e-4b5e-88f3-7745ad13f6d4/responses', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answer }),
