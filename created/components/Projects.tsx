@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { createProject, getUserProjects, deleteProject } from "@/lib/supabaseProjects";
+import { getSurveys } from "@/lib/supabaseSurveys";
+import { getSurveyResponses } from "@/lib/supabaseResponses";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
@@ -30,8 +32,57 @@ export default function Projects() {
   const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [totalSurveys, setTotalSurveys] = useState(0);
+  const [totalResponses, setTotalResponses] = useState(0);
+  const [loadingTotals, setLoadingTotals] = useState(true);
 
   const router = useRouter();
+
+  // Fetch totals across all projects
+  const fetchTotals = useCallback(async () => {
+    if (!userId || projects.length === 0) {
+      setLoadingTotals(false);
+      return;
+    }
+
+    setLoadingTotals(true);
+    try {
+      let surveyCount = 0;
+      let responseCount = 0;
+
+      // Loop through all projects
+      for (const project of projects) {
+        try {
+          // Get surveys for this project
+          const surveys = await getSurveys(project.id);
+          if (Array.isArray(surveys)) {
+            surveyCount += surveys.length;
+
+            // Get responses for each survey
+            for (const survey of surveys) {
+              try {
+                const responses = await getSurveyResponses(survey.id, "desc");
+                if (Array.isArray(responses)) {
+                  responseCount += responses.length;
+                }
+              } catch (err) {
+                console.error(`Failed to fetch responses for survey ${survey.id}:`, err);
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to fetch surveys for project ${project.id}:`, err);
+        }
+      }
+
+      setTotalSurveys(surveyCount);
+      setTotalResponses(responseCount);
+    } catch (error) {
+      console.error("Failed to fetch totals:", error);
+    } finally {
+      setLoadingTotals(false);
+    }
+  }, [userId, projects]);
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
@@ -47,6 +98,14 @@ export default function Projects() {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  useEffect(() => {
+    if (projects.length > 0) {
+      fetchTotals();
+    } else {
+      setLoadingTotals(false);
+    }
+  }, [projects, fetchTotals]);
 
   // Create project
   const handleCreate = async () => {
@@ -98,6 +157,28 @@ export default function Projects() {
       <p className="text-muted-foreground text-base">
         Create and manage your survey projects here.
       </p>
+
+      {/* Totals Section */}
+      {projects.length > 0 && (
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2">
+            <span className="font-semibold text-purple-900">Total Projects:</span>
+            <span className="text-purple-700">{projects.length}</span>
+          </div>
+          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+            <span className="font-semibold text-blue-900">Total Surveys:</span>
+            <span className="text-blue-700">
+              {loadingTotals ? "..." : totalSurveys}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+            <span className="font-semibold text-green-900">Total Responses:</span>
+            <span className="text-green-700">
+              {loadingTotals ? "..." : totalResponses}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Projects List */}
       <div className="mt-8 space-y-4">
