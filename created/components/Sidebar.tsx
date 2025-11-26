@@ -61,6 +61,12 @@ export function DashboardSidebar() {
 
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
+                    <Link href={`/dashboard/${projectId}/responses`}>Responses Editing</Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
                     <Link href={`/dashboard/${projectId}/email`}>Email Settings</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
