@@ -10,9 +10,9 @@ interface PublicSurveyProps {
 
 export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
   const [survey, setSurvey] = useState<any>({
-    question: "Would you recommend us?",
-    type: "yesno",
-    options: [],
+    question: "What's your favorite feature?",
+    type: "multiple",
+    options: ["Speed", "Design", "Support", "Pricing"],
     color: "#6366f1"
   });
   const [answer, setAnswer] = useState("");
@@ -23,7 +23,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     if (!answer) return;
     setSubmitting(true);
     try {
-      await fetch('https://survey-delta-one.vercel.app/api/surveys/null/responses', {
+      await fetch('https://survey-delta-one.vercel.app/api/surveys/8abd5c5f-e2a7-4e0a-afaf-6a83643efa38/responses', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answer }),
