@@ -6,6 +6,7 @@ export default function OneQWidget() {
   const [submitted, setSubmitted] = useState(false);
 
   const options = [];
+  let t
 
   const handleSubmit = async () => {
     if(!answer) return;
