@@ -12,18 +12,18 @@ function estimateTokensForText(text: string) {
   return Math.max(1, Math.ceil(words * 1.5));
 }
 
-export async function POST(request: NextRequest, { params }: { params: { surveyId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ surveyId: string }> }) {
   if (!API_KEY) {
     return NextResponse.json({ error: "AI_API_KEY not configured" }, { status: 500 });
   }
 
-  const { surveyId } = params;
+  const { surveyId } = await params;
   const supabase = createSupaClient();
 
   // Load survey and responses
   const { data: survey, error: surveyError } = await supabase
     .from("surveys")
-    .select("id, question, type, owner_id")
+    .select("id, question, type, user_id")
     .eq("id", surveyId)
     .single();
 
@@ -84,7 +84,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("id, balance")
-    .eq("id", survey.owner_id)
+    .eq("id", survey.user_id)
     .single();
 
   if (userError || !user) {
