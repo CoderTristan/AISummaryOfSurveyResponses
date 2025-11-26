@@ -15,7 +15,6 @@ import {
   deleteResponses,
   deleteSingleResponse,
 } from "@/lib/supabaseResponses";
-import { createSupaClient } from "@/lib/supabaseClient";
 import { getBalance } from "@/lib/userData";
 
 interface ResponsesPageProps {
@@ -24,7 +23,6 @@ interface ResponsesPageProps {
 }
 
 export default function Response({projectId}: ResponsesPageProps) {
-  const supabase = createSupaClient();
   const [surveys, setSurveys] = useState<any[]>([]);
   const [responses, setResponses] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
