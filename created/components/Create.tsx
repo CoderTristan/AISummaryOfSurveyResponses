@@ -73,6 +73,7 @@ export default function CreateSurveyPage() {
   const optionArray = (): string[] =>
     options.split(",").map((s) => s.trim()).filter(Boolean);
 
+  const generateWidgetCode = (id: string, q: string, t: typeof type, opts: string[]) => {
   const escapeHtml = (s: string) =>
     String(s)
       .replaceAll("&", "&amp;")
@@ -81,47 +82,127 @@ export default function CreateSurveyPage() {
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
-  const generateWidgetCode = (id: string, q: string, t: typeof type, opts: string[]) => {
-    const apiUrl = `${baseUrl}api/surveys/${id}/responses`;
+  const renderOptionsHtml = () => {
+    const buttonStyle = `border:2px solid ${themeColor}; border-radius:.5rem; padding:.75rem 1rem; font-weight:600; cursor:pointer; transition:0.15s; background:white;`;
+    const buttonHover = `this.style.background='${themeColor}'; this.style.color='white';`;
+    const buttonReset = `this.style.background='white'; this.style.color='${themeColor}';`;
 
-    const optionsHtml =
-      t === "yesno"
-        ? `<div class="oneq-row"><button class="oneq-btn" data-value="yes">Yes</button><button class="oneq-btn" data-value="no">No</button></div>`
-        : t === "multiple" && opts.length
-        ? `<div class="oneq-col">${opts
-            .map((o) => `<button class="oneq-btn" data-value="${escapeHtml(o)}">${escapeHtml(o)}</button>`)
-            .join("")}</div>`
-        : t === "rating"
-        ? `<div class="oneq-row">${[1, 2, 3, 4, 5]
-            .map((n) => `<button class="oneq-rate" data-value="${n}">${n}</button>`)
-            .join("")}</div>`
-        : t === "emoji"
-        ? `<div class="oneq-row">${["😡", "😕", "😐", "🙂", "🤩"]
-            .map((e) => `<button class="oneq-emoji" data-value="${encodeURIComponent(e)}">${e}</button>`)
-            .join("")}</div>`
-        : `<div class="oneq-col"><input class="oneq-text" placeholder="Type your answer…" /></div>`;
+    if (t === "yesno") {
+      return `
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button style="${buttonStyle}" onmouseover="${buttonHover}" onmouseout="${buttonReset}" data-value="yes">Yes</button>
+          <button style="${buttonStyle}" onmouseover="${buttonHover}" onmouseout="${buttonReset}" data-value="no">No</button>
+        </div>
+      `;
+    }
 
-    const css = `
-<style>
-.oneq-w{font-family:Inter;padding:18px;border-radius:14px;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,0.08);max-width:520px;border-top:6px solid ${themeColor}}
-.oneq-q{font-weight:600;margin-bottom:14px;color:#0f172a}
-.oneq-row{display:flex;gap:8px}
-.oneq-col{display:flex;flex-direction:column;gap:8px}
-.oneq-btn,.oneq-rate,.oneq-emoji{border:1px solid #e6e9ef;background:#f8fafb;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600;transition:0.15s}
-.oneq-btn:hover,.oneq-rate:hover,.oneq-emoji:hover{background:${themeColor};color:white}
-.oneq-text{padding:10px;border-radius:8px;border:1px solid #e6e9ef;width:100%}
-.oneq-submit{margin-top:12px;padding:10px;border-radius:10px;border:none;background:${themeColor};color:#fff;font-weight:600;cursor:pointer}
-.oneq-small{font-size:12px;color:#8b949e;margin-top:10px;text-align:center}
-</style>`;
+    if (t === "multiple" && opts.length) {
+      return `
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${opts.map(o => `<button style="${buttonStyle}" onmouseover="${buttonHover}" onmouseout="${buttonReset}" data-value="${escapeHtml(o)}">${escapeHtml(o)}</button>`).join("")}
+        </div>
+      `;
+    }
 
-    return `<div id="oneq-${id}" class="oneq-w"><div class="oneq-q">${escapeHtml(q)}</div>${optionsHtml}<div><button class="oneq-submit" ${t !== "text" ? "disabled" : ""}>Submit</button></div><div class="oneq-small">Powered by OneQ</div></div>${css}`;
+    if (t === "rating") {
+      return `
+        <div style="display:flex;gap:8px;justify-content:center;">
+          ${[1,2,3,4,5].map(n => `<button style="${buttonStyle}" onmouseover="${buttonHover}" onmouseout="${buttonReset}" data-value="${n}">${n}</button>`).join("")}
+        </div>
+      `;
+    }
+
+    if (t === "emoji") {
+      const emojis = ["😡","😕","😐","🙂","🤩"];
+      return `
+        <div style="display:flex;gap:8px;justify-content:center;">
+          ${emojis.map(e => `<button style="${buttonStyle}" onmouseover="${buttonHover}" onmouseout="${buttonReset}" data-value="${encodeURIComponent(e)}">${e}</button>`).join("")}
+        </div>
+      `;
+    }
+
+    // text input
+    return `<textarea style="width:100%; padding:.75rem; border:2px solid ${themeColor}; border-radius:.5rem; font-family:inherit;" placeholder="Type your answer…"></textarea>`;
   };
 
-  // Generate live preview widget
-  const generateLivePreview = () => {
-    if (!question.trim()) return "";
-    return generateWidgetCode("preview", question, type, optionArray());
-  };
+  return `
+<div id="oneq-${id}" style="
+  font-family:Inter, sans-serif;
+  background:white;
+  border-radius:1rem;
+  border:2px solid ${themeColor}33;
+  max-width:400px;
+  margin:auto;
+  padding:2rem;
+  display:flex;
+  flex-direction:column;
+  gap:1rem;
+  text-align:center;
+">
+  <div style="font-weight:600; font-size:1.25rem; color:#0f172a;">${escapeHtml(q)}</div>
+  ${renderOptionsHtml()}
+  <button id="oneq-submit" style="
+    background:${themeColor};
+    color:white;
+    border:none;
+    border-radius:.5rem;
+    padding:.75rem 1rem;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:1rem;
+  ">Submit</button>
+  <div id="oneq-thanks" style="font-size:.75rem; color:#6b7280; margin-top:.5rem; display:none;">Thanks for responding!</div>
+</div>
+
+<script>
+(function(){
+  const container = document.getElementById('oneq-${id}');
+  let answer = null;
+
+  container.querySelectorAll('button[data-value]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      answer = btn.getAttribute('data-value');
+      container.querySelectorAll('button[data-value]').forEach(b => {
+        b.style.background = 'white';
+        b.style.color = '${themeColor}';
+      });
+      btn.style.background = '${themeColor}';
+      btn.style.color = 'white';
+    });
+  });
+
+  const textarea = container.querySelector('textarea');
+  if(textarea){
+    textarea.addEventListener('input', e => {
+      answer = textarea.value;
+    });
+  }
+
+  container.querySelector('#oneq-submit').addEventListener('click', async () => {
+    if(!answer) return;
+    try {
+      await fetch('${baseUrl}/api/surveys/${id}/responses', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ answer })
+      });
+      container.querySelector('#oneq-thanks').style.display='block';
+    } catch(err){
+      alert('Failed to submit');
+    }
+  });
+})();
+</script>
+  `;
+};
+
+
+// Live preview uses the same function
+const generateLivePreview = () => {
+  if (!question.trim()) return "";
+  return generateWidgetCode("preview", question, type, optionArray());
+};
+
 
   const handleSubmit = async () => {
     if (!question.trim()) return;
@@ -131,7 +212,7 @@ export default function CreateSurveyPage() {
     const id = crypto.randomUUID();
     setSurveyId(id);
 
-    const survey_link = `${baseUrl}survey/${id}`;
+    const survey_link = `${baseUrl}/survey/${id}`;
     const survey_iframe = `<iframe src="${survey_link}" style="width:100%; height:360px; border:none;"></iframe>`;
     const survey_widget = generateWidgetCode(id, question, type, optionArray());
     const survey_script = `<div id="oneq-${id}"></div><script>(function(){var w=document.getElementById('oneq-${id}');if(!w)return;w.innerHTML=${JSON.stringify(survey_widget)};})();</script>`;
@@ -161,7 +242,7 @@ export default function CreateSurveyPage() {
     }
   };
 
-  const previewLink = surveyId ? `${baseUrl}survey/${surveyId}` : "";
+  const previewLink = surveyId ? `${baseUrl}/survey/${surveyId}` : "";
   const iframeEmbed = surveyId ? `<iframe src="${previewLink}" style="width:100%; height:360px; border:none;"></iframe>` : "";
   const scriptEmbed = surveyId ? `<div id="oneq-${surveyId}"></div>\n<script>\n(function(){var w=document.getElementById('oneq-${surveyId}');if(!w)return;w.innerHTML=${JSON.stringify(generateWidgetCode(surveyId, question, type, optionArray()))};})();\n</script>` : "";
   const widgetEmbed = surveyId ? generateWidgetCode(surveyId, question, type, optionArray()) : "";
