@@ -15,7 +15,7 @@ function estimateTokensForText(text: string) {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { surveyId: string } }
+  { params }: { params: Promise<{ surveyId: string }> }
 ) {
   if (!API_KEY) {
     return NextResponse.json(
@@ -24,7 +24,7 @@ export async function POST(
     );
   }
 
-  const surveyId = params.surveyId;
+  const {surveyId} = await params
   const supabase = createSupaClient();
 
   // Load survey
