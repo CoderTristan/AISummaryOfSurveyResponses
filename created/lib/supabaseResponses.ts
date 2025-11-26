@@ -31,3 +31,14 @@ export async function deleteResponses(surveyId: string) {
 
   if (error) throw error;
 }
+
+export async function deleteSingleResponse(responseId: string) {
+  const { userId } = await auth();
+
+  const { error } = await supabase
+    .from("responses")
+    .delete()
+    .eq("id", responseId)
+
+  if (error) throw error;
+}
