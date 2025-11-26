@@ -149,7 +149,7 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
 
   setGenerating((prev) => new Set(prev).add(surveyId));
   try {
-    const res = await fetch(`/api/surveys/${surveyId}/generate-summary`, { method: "POST" });
+    const res = await fetch(`/api/surveys/${surveyId}/ai-summaries`, { method: "POST" });
     if (!res.ok) {
       if (!suppressAlert) {
         const t = await res.text();
