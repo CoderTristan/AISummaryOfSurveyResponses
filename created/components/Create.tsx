@@ -237,7 +237,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
     if (!answer) return;
     setSubmitting(true);
     try {
-      await fetch('${baseUrl}/api/surveys/${surveyId}/responses', {
+      await fetch('${baseUrl}/api/surveys/${id}/responses', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answer }),
