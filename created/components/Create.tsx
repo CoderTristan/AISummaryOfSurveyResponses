@@ -217,7 +217,7 @@ export default function OneQWidget() {
 
   const handleSubmit = async () => {
     if(!answer) return;
-    await fetch('${process.env.APP_URL}/api/surveys/${id}/responses', {
+    await fetch('${baseUrl}/api/surveys/${id}/responses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ answer }),
