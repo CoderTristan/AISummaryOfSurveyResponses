@@ -42,14 +42,17 @@ export async function POST(request: NextRequest, { params }: { params: { surveyI
     return NextResponse.json({ error: "Failed to load responses" }, { status: 500 });
   }
 
+
+  if (!responses || responses.length === 0) {
+  return NextResponse.json(
+    { error: "This survey has no responses — cannot generate a summary." },
+    { status: 400 }
+  );
+}
   // Build prompt
   const MAX_ITEMS = 200;
   const answers = (responses || []).slice(0, MAX_ITEMS).map((r: any) => String(r.answer || ""));
-
-  if (answers.length === 0) {
-    return NextResponse.json({ error: "No responses to summarize" }, { status: 400 });
-  }
-
+  
   const prompt = `
 You are a helpful assistant. Given the survey question and a list of responses, produce:
 1) A short summary (2-4 concise paragraphs) describing common themes and notable points.
