@@ -32,6 +32,19 @@ export default function Response({projectId}: ResponsesPageProps) {
   const [balance, setBalance] = useState<number | null>(null);
   const [costPer1k, setCostPer1k] = useState<number>(0.02); // default
 
+  // Add this inside your component, alongside other functions:
+async function refreshSurvey(surveyId: string) {
+  setLoadingSurvey((prev) => new Set(prev).add(surveyId));
+  const r = await getSurveyResponses(surveyId, "desc");
+  setResponses((prev) => ({ ...prev, [surveyId]: Array.isArray(r) ? r : [] }));
+  setLoadingSurvey((prev) => {
+    const next = new Set(prev);
+    next.delete(surveyId);
+    return next;
+  });
+}
+
+
   useEffect(() => {
     load();
     fetchBalance();
@@ -118,13 +131,12 @@ export default function Response({projectId}: ResponsesPageProps) {
 
   // Generate AI summary for a single survey
   // Generate AI summary for a single survey
-async function generateSummary(surveyId: string) {
-  // Estimate token cost first
-  const survey = surveys.find(s => s.id === surveyId);
-  if (!survey) return;
+async function generateSummary(surveyId: string, suppressAlert = false) {
+  const survey = surveys.find((s) => s.id === surveyId);
+  if (!survey) return false;
 
   const list = responses[surveyId] || [];
-  const joinedAnswers = list.map(r => String(r.answer || "")).join("\n");
+  const joinedAnswers = list.map((r) => String(r.answer || "")).join("\n");
   const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
   const promptTokens = estimateTokensForText(promptEstimate);
   const expectedCompletionTokens = 350;
@@ -132,30 +144,40 @@ async function generateSummary(surveyId: string) {
   const estCost = estimateCostForTokens(totalEstimate);
 
   if (balance === null || balance < estCost) {
-    alert(`Not enough tokens to generate AI summary.\nRequired: ${estCost.toFixed(4)}, Available: ${balance ?? 0}`);
-    return;
+    if (!suppressAlert) {
+      alert(`Not enough tokens to generate AI summary.\nRequired: ${estCost.toFixed(4)}, Available: ${balance ?? 0}`);
+    }
+    return false;
   }
 
   setGenerating((prev) => new Set(prev).add(surveyId));
   try {
     const res = await fetch(`/api/surveys/${surveyId}/generate-summary`, { method: "POST" });
     if (!res.ok) {
-      const t = await res.text();
-      alert("Generate failed: " + t);
-      return;
+      if (!suppressAlert) {
+        const t = await res.text();
+        alert("Generate failed: " + t);
+      }
+      return false;
     }
+
     const data = await res.json();
     if (data?.generated) {
       const { summary, sentiment, actions } = data.generated;
-      setSurveys((prev) => prev.map(s => s.id === surveyId ? { ...s, ai_summary: summary, ai_sentiment: sentiment, ai_actions: actions } : s));
+      setSurveys((prev) =>
+        prev.map((s) => (s.id === surveyId ? { ...s, ai_summary: summary, ai_sentiment: sentiment, ai_actions: actions } : s))
+      );
     }
+
     // Refresh token balance after successful generation
     await fetchBalance();
+    return true;
   } catch (err) {
     console.error("generate error", err);
-    alert("Generation failed — see console");
+    if (!suppressAlert) alert("Generation failed — see console");
+    return false;
   } finally {
-    setGenerating(prev => {
+    setGenerating((prev) => {
       const next = new Set(prev);
       next.delete(surveyId);
       return next;
@@ -164,12 +186,20 @@ async function generateSummary(surveyId: string) {
 }
 
 
+
   async function generateAll() {
-    if (!confirm("Generate AI summaries for ALL surveys? This will consume tokens.")) return;
-    for (const s of surveys) {
-      await generateSummary(s.id);
-    }
+  if (!confirm("Generate AI summaries for ALL surveys? This will consume tokens.")) return;
+
+  let failed = false;
+  for (const s of surveys) {
+    const ok = await generateSummary(s.id, true); // suppressAlert = true
+    if (!ok) failed = true;
   }
+
+  if (failed) {
+    alert("Some surveys could not be generated due to insufficient tokens.");
+  }
+}
 
   if (loading) {
     return (
@@ -197,6 +227,9 @@ async function generateSummary(surveyId: string) {
             <div className="text-sm text-gray-700 mr-2">
               Tokens balance: <strong>{balance === null ? "—" : `${balance}`}</strong>
             </div>
+            <Button variant="outline" size="sm" onClick={load}>
+  Refresh All
+</Button>
             <Button variant="outline" size="sm" onClick={generateAll}>
               Generate All
             </Button>
@@ -216,7 +249,6 @@ async function generateSummary(surveyId: string) {
         const promptTokens = estimateTokensForText(promptEstimate);
         const expectedCompletionTokens = 350;
         const totalEstimate = promptTokens + expectedCompletionTokens;
-        const estCost = estimateCostForTokens(totalEstimate);
 
         return (
           <Card key={survey.id} className="shadow-sm border">
@@ -228,12 +260,16 @@ async function generateSummary(surveyId: string) {
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
-                  <div className="text-xs text-gray-600">Estimate: {totalEstimate} tokens • ${estCost.toFixed(4)}</div>
+                  <div className="text-xs text-gray-600">Estimate: {totalEstimate} tokens</div>
 
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => toggleSort(survey.id)} className="flex items-center gap-2">
                       <ArrowUpDown className="w-4 h-4" /> {direction.toUpperCase()}
                     </Button>
+
+                    <Button variant="ghost" size="sm" onClick={() => refreshSurvey(survey.id)} disabled={loadingSurvey.has(survey.id)}>
+  {loadingSurvey.has(survey.id) ? <Loader2 className="animate-spin w-4 h-4" /> : "Refresh"}
+</Button>
 
                     <Button variant="ghost" size="sm" onClick={() => generateSummary(survey.id)} disabled={isGenerating}>
                       {isGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : "Generate AI Summary"}
