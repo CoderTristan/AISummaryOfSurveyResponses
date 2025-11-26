@@ -204,51 +204,102 @@ const generateLivePreview = () => {
   return generateWidgetCode("preview", question, type, optionArray());
 };
 
-const generateReactComponent = (id: string, q: string, t: typeof type, opts: string[], color: string) => {
+const generateReactComponent = (
+  id: string,
+  q: string,
+  t: typeof type,
+  opts: string[],
+  color: string
+) => {
   const options = opts.map(o => JSON.stringify(o)).join(", ");
-  return `
-import { useState } from 'react';
+  return `'use client';
 
-export default function OneQWidget() {
-  const [answer, setAnswer] = useState('');
+import { useEffect, useState, ChangeEvent } from "react";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+
+interface PublicSurveyProps {
+  surveyId: string;
+}
+
+export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
+  const [survey, setSurvey] = useState<any>({
+    question: ${JSON.stringify(q)},
+    type: ${JSON.stringify(t)},
+    options: [${options}],
+    color: ${JSON.stringify(color)}
+  });
+  const [answer, setAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const options = [${options}];
-  let t
-
-  const handleSubmit = async () => {
-    if(!answer) return;
-    await fetch('${baseUrl}/api/surveys/${id}/responses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answer }),
-    });
-    setSubmitted(true);
+  const submit = async () => {
+    if (!answer) return;
+    setSubmitting(true);
+    try {
+      await fetch('${baseUrl}/api/surveys/${surveyId}/responses', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer }),
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error(err);
+      setSubmitting(false);
+    }
   };
 
-  return (
-    <div style={{ fontFamily: 'Inter, sans-serif', maxWidth: 400, margin: 'auto', padding: 16, border: '2px solid ${color}33', borderRadius: 16, textAlign: 'center' }}>
-      <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 12 }}>${q}</div>
-      {t === 'text' ? (
-        <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Type your answer…" style={{ width: '100%', padding: 12, border: '2px solid ${color}', borderRadius: 8 }} />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: t==='multiple'?'column':'row', gap: 8, justifyContent: 'center' }}>
-          {options.map(o => (
-            <button key={o} onClick={() => setAnswer(o)} style={{ border: '2px solid ${color}', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', backgroundColor: answer===o?'${color}':'white', color: answer===o?'white':'${color}' }}>
+  const renderInput = () => {
+    if (survey.type === "multiple" && survey.options?.length) {
+      return (
+        <div className="flex flex-col gap-2">
+          {survey.options.map((o: string) => (
+            <Button
+              key={o}
+              onClick={() => setAnswer(o)}
+              style={{
+                backgroundColor: answer === o ? "${color}" : "white",
+                color: answer === o ? "white" : "${color}",
+                borderColor: "${color}",
+              }}
+            >
               {o}
-            </button>
+            </Button>
           ))}
         </div>
-      )}
-      <button onClick={handleSubmit} style={{ marginTop: 12, padding: '8px 16px', borderRadius: 8, fontWeight: 600, backgroundColor: '${color}', color: 'white', cursor: 'pointer' }}>
-        Submit
-      </button>
-      {submitted && <div style={{ marginTop: 8, color: '#6b7280', fontSize: 12 }}>Thanks for responding!</div>}
+      );
+    } else {
+      return (
+        <Textarea
+          value={answer}
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setAnswer(e.target.value)}
+          placeholder="Type your answer…"
+          className="w-full border-2"
+          style={{ borderColor: "${color}" }}
+        />
+      );
+    }
+  };
+
+  if (submitted) return <div>Thanks for responding!</div>;
+
+  return (
+    <div className="p-6 max-w-md mx-auto">
+      <div className="mb-4 font-semibold text-lg">{survey.question}</div>
+      {renderInput()}
+      <Button
+        onClick={submit}
+        disabled={!answer || submitting}
+        className="mt-4 w-full"
+        style={{ backgroundColor: "${color}", color: "white" }}
+      >
+        {submitting ? "Submitting…" : "Submit"}
+      </Button>
     </div>
   );
-}
-  `;
+}`;
 };
+
 
 const handleSubmit = async () => {
   if (!question.trim()) return;
