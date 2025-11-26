@@ -2,9 +2,6 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { auth } from '@clerk/nextjs/server';
-import { createSupaClient } from "./supabaseClient";
-
-const supabase = createSupaClient()
 
 
 export async function deleteUserData(clerkId: string) {
@@ -68,7 +65,7 @@ if (surveysError1) {
 
 export async function getBalance() {
   const { userId } = await auth();
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("users")
     .select("balance")
     .eq("clerk_id", userId)

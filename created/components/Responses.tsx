@@ -44,7 +44,6 @@ async function refreshSurvey(surveyId: string) {
   });
 }
 
-
   useEffect(() => {
     load();
     fetchBalance();
@@ -129,8 +128,6 @@ async function refreshSurvey(surveyId: string) {
     });
   }
 
-  // Generate AI summary for a single survey
-  // Generate AI summary for a single survey
 async function generateSummary(surveyId: string, suppressAlert = false) {
   const survey = surveys.find((s) => s.id === surveyId);
   if (!survey) return false;
@@ -145,7 +142,7 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
 
   if (balance === null || balance < estCost) {
     if (!suppressAlert) {
-      alert(`Not enough tokens to generate AI summary.\nRequired: ${estCost.toFixed(4)}, Available: ${balance ?? 0}`);
+      alert(`Not enough tokens to generate AI summary.\nRequired: ${totalEstimate}, Available: ${balance ?? 0}`);
     }
     return false;
   }
@@ -169,7 +166,6 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
       );
     }
 
-    // Refresh token balance after successful generation
     await fetchBalance();
     return true;
   } catch (err) {
