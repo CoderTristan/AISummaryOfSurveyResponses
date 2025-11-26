@@ -337,38 +337,46 @@ export default function Response({ projectId }: ResponsesPageProps) {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* ⭐ AI SUMMARY BLOCK WITH ACTION CARDS */}
-              {survey.ai_summary ? (
-                <div className="p-3 bg-gray-50 border rounded">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">AI Summary</div>
-                    <div className="text-sm text-gray-600">
-                      Sentiment:{" "}
-                      <strong>{(survey.ai_sentiment ?? 0).toFixed(2)}</strong>
-                    </div>
-                  </div>
 
-                  <div className="mt-2 text-sm text-gray-800 whitespace-pre-wrap">
-                    {survey.ai_summary}
-                  </div>
+  {survey.ai_summary ? (
+    <div className="p-3 bg-gray-50 border rounded space-y-3">
 
-                  {Array.isArray(survey.ai_actions) && survey.ai_actions.length > 0 && (
-                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {survey.ai_actions.map((act: string, i: number) => (
-                        <div
-                          key={i}
-                          className="p-3 border rounded bg-white shadow-sm text-sm"
-                        >
-                          <strong>Action {i + 1}:</strong>
-                          <div className="mt-1 text-gray-700">{act}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500">No AI summary yet</div>
-              )}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="font-medium text-lg">AI Summary</div>
+        <div className="text-sm text-gray-600">
+          Sentiment: <strong>{Number(survey.ai_sentiment).toFixed(2)}</strong>
+        </div>
+      </div>
+
+      {/* Summary Text */}
+      <div className="text-sm text-gray-800 whitespace-pre-wrap">
+        {survey.ai_summary}
+      </div>
+
+      {/* Action Recommendations */}
+      {Array.isArray(survey.ai_actions) && survey.ai_actions.length > 0 && (
+        <div className="pt-2 space-y-2">
+          <div className="font-medium text-sm text-gray-700">
+            Recommended Actions:
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {survey.ai_actions.map((action: string, i: number) => (
+              <div
+                key={i}
+                className="p-3 border rounded-lg bg-white shadow-sm text-sm text-gray-800"
+              >
+                {action}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  ) : (
+    <div className="text-sm text-gray-500">No AI summary yet</div>
+  )}
 
               {/* RAW RESPONSES */}
               {sortedList.length === 0 && (
