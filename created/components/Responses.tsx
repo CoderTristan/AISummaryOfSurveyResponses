@@ -16,6 +16,7 @@ import {
   deleteSingleResponse,
 } from "@/lib/supabaseResponses";
 import { createSupaClient } from "@/lib/supabaseClient";
+import { getBalance } from "@/lib/userData";
 
 interface ResponsesPageProps {
     projectId: string;
@@ -35,23 +36,18 @@ export default function Response({projectId}: ResponsesPageProps) {
 
   useEffect(() => {
     load();
-    fetchTokensBalance();
+    fetchBalance();
   }, []);
 
   // ⭐ UPDATED: load tokens directly from Supabase
-  async function fetchTokensBalance() {
+  async function fetchBalance() {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("tokens")
-        .single();
+      const data = await getBalance()
 
-      if (error) throw error;
-
-      setBalance(typeof data?.tokens === "number" ? data.tokens : 0);
+      setBalance(typeof data?.balance === "number" ? data.balance : 0);
       setCostPer1k(0.02); // unchanged default
     } catch (e) {
-      console.warn("tokens balance fetch failed", e);
+      console.warn("balance fetch failed", e);
     }
   }
 
@@ -156,7 +152,7 @@ async function generateSummary(surveyId: string) {
       setSurveys((prev) => prev.map(s => s.id === surveyId ? { ...s, ai_summary: summary, ai_sentiment: sentiment, ai_actions: actions } : s));
     }
     // Refresh token balance after successful generation
-    await fetchTokensBalance();
+    await fetchBalance();
   } catch (err) {
     console.error("generate error", err);
     alert("Generation failed — see console");

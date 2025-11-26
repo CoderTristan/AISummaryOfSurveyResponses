@@ -4,7 +4,6 @@ import type { NextRequest } from "next/server";
 import { createSupaClient } from "@/lib/supabaseClient"; 
 
 const API_KEY = process.env.AI_API_KEY;
-const MODEL = "gpt-4o-mini"; // change if desired
 const AI_COST_PER_1K = parseFloat(process.env.AI_COST_PER_1K || "0.02"); 
 
 function estimateTokensForText(text: string) {

@@ -1,6 +1,10 @@
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { auth } from '@clerk/nextjs/server';
+import { createSupaClient } from "./supabaseClient";
+
+const supabase = createSupaClient()
 
 
 export async function deleteUserData(clerkId: string) {
@@ -60,4 +64,16 @@ if (surveysError1) {
   }
 
   return true;
+}
+
+export async function getBalance() {
+  const { userId } = await auth();
+  const { data, error } = await supabase
+    .from("users")
+    .select("balance")
+    .eq("clerk_id", userId)
+    .single()
+
+  if (error) throw error;
+  return data;
 }
