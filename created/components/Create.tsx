@@ -481,7 +481,7 @@ const handleSubmit = async () => {
                   </CardHeader>
                   <CardContent>
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full">
-  <TabsList className="grid grid-cols-4 gap-1 mb-3">
+  <TabsList className="grid grid-cols-5 gap-1 mb-3">
     <TabsTrigger value="widget">Widget</TabsTrigger>
     <TabsTrigger value="link">Link</TabsTrigger>
     <TabsTrigger value="iframe">iFrame</TabsTrigger>

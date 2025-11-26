@@ -233,6 +233,7 @@ export default function Overview({ projectId }: OverviewProps) {
 
   return (
     <div className="p-6 space-y-6">
+      
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Project Overview</h1>
 
@@ -469,27 +470,28 @@ export default function Overview({ projectId }: OverviewProps) {
             </TabsContent>
 
             {/* EMBEDS TAB */}
-            <TabsContent value="embeds">
-              {selectedSurvey ? (
-                <Card className="shadow-sm">
-                  {["survey_link", "survey_iframe", "survey_script", "survey_widget"].map(key => (
-                    <div key={key} className="mb-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold">{key.replace("survey_", "").toUpperCase()}</span>
-                        <Button size="sm" variant="outline" onClick={() => copy(selectedSurvey[key] || "", key)}>
-                          {copiedField === key ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-                        </Button>
-                      </div>
-                      <pre className="bg-gray-100 p-1 rounded text-xs font-mono overflow-x-hidden break-words">
-                        {selectedSurvey[key]}
-                      </pre>
-                    </div>
-                  ))}
-                </Card>
-              ) : (
-                <p className="text-gray-500">No survey selected.</p>
-              )}
-            </TabsContent>
+<TabsContent value="embeds">
+  {selectedSurvey ? (
+    <Card className="shadow-sm space-y-3 p-3">
+      {["survey_link", "survey_iframe", "survey_script", "survey_widget", "survey_react_component"].map(key => (
+        <div key={key} className="mb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-semibold">{key.replace("survey_", "").replace("_component", " (React)").toUpperCase()}</span>
+            <Button size="sm" variant="outline" onClick={() => copy(selectedSurvey[key] || "", key)}>
+              {copiedField === key ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+            </Button>
+          </div>
+          <pre className="bg-gray-100 p-1 rounded text-xs font-mono overflow-x-hidden break-words">
+            {selectedSurvey[key]}
+          </pre>
+        </div>
+      ))}
+    </Card>
+  ) : (
+    <p className="text-gray-500">No survey selected.</p>
+  )}
+</TabsContent>
+
           </Tabs>
         </DialogContent>
       </Dialog>
