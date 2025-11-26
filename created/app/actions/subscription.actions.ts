@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 export async function createSubscriptionCheckout(priceId) {
 const { userId } = await auth();
 if (!userId) throw new Error('Not authenticated');
+const baseUrl = process.env.APP_URL
 
 
 const { data: user } = await supabaseAdmin
@@ -38,8 +39,8 @@ mode: 'subscription',
 payment_method_types: ['card'],
 customer: stripeCustomerId,
 line_items: [{ price: priceId, quantity: 1 }],
-success_url: `${process.env.APP_URL}/dashboard/projects?success=true`,
-cancel_url: `${process.env.APP_URL}/pricing`,
+success_url: `${baseUrl}/dashboard/projects?success=true`,
+cancel_url: `${baseUrl}/pricing`,
 metadata: { clerkId: userId, priceId },
 });
 

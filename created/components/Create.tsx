@@ -41,7 +41,7 @@ export default function CreateSurveyPage() {
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [themeColor, setThemeColor] = useState<string>("#6366f1");
 
-  const baseUrl = process.env.APP_URL
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
 
   const surveyExamples = [
     {
