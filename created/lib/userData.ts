@@ -72,7 +72,7 @@ export async function getBalance() {
     .from("users")
     .select("balance")
     .eq("clerk_id", userId)
-    .single()
+    .maybeSingle()
 
   if (error) throw error;
   return data;
