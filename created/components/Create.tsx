@@ -31,6 +31,7 @@ export default function CreateSurveyPage() {
       : (params.projectId as string | undefined);
 
   const [question, setQuestion] = useState<string>("");
+  const [reactComponent, setReactComponent] = useState<string>("");
   const [type, setType] = useState<"yesno" | "multiple" | "rating" | "emoji" | "text">("yesno");
   const [options, setOptions] = useState<string>("");
   const [surveyId, setSurveyId] = useState<string | null>(null);
@@ -203,44 +204,95 @@ const generateLivePreview = () => {
   return generateWidgetCode("preview", question, type, optionArray());
 };
 
+const generateReactComponent = (id: string, q: string, t: typeof type, opts: string[], color: string) => {
+  const options = opts.map(o => JSON.stringify(o)).join(", ");
+  return `
+import { useState } from 'react';
+
+export default function OneQWidget() {
+  const [answer, setAnswer] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const options = [${options}];
 
   const handleSubmit = async () => {
-    if (!question.trim()) return;
-    setLoading(true);
-    setCreated(false);
-
-    const id = crypto.randomUUID();
-    setSurveyId(id);
-
-    const survey_link = `${baseUrl}/survey/${id}`;
-    const survey_iframe = `<iframe src="${survey_link}" style="width:100%; height:360px; border:none;"></iframe>`;
-    const survey_widget = generateWidgetCode(id, question, type, optionArray());
-    const survey_script = `<div id="oneq-${id}"></div><script>(function(){var w=document.getElementById('oneq-${id}');if(!w)return;w.innerHTML=${JSON.stringify(survey_widget)};})();</script>`;
-
-    const payload = {
-      id,
-      question,
-      type,
-      color: themeColor,
-      survey_link,
-      survey_iframe,
-      survey_script,
-      survey_widget,
-      options: type === "multiple" ? optionArray() : null,
-      project_id: projectId ?? undefined,
-    };
-
-    try {
-      await createSurvey(payload);
-      setCreated(true);
-      router.refresh();
-    } catch (err) {
-      console.error("createSurvey failed", err);
-      alert("Failed to create survey — check console.");
-    } finally {
-      setLoading(false);
-    }
+    if(!answer) return;
+    await fetch('${process.env.APP_URL}/api/surveys/${id}/responses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answer }),
+    });
+    setSubmitted(true);
   };
+
+  return (
+    <div style={{ fontFamily: 'Inter, sans-serif', maxWidth: 400, margin: 'auto', padding: 16, border: '2px solid ${color}33', borderRadius: 16, textAlign: 'center' }}>
+      <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 12 }}>${q}</div>
+      {t === 'text' ? (
+        <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Type your answer…" style={{ width: '100%', padding: 12, border: '2px solid ${color}', borderRadius: 8 }} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: t==='multiple'?'column':'row', gap: 8, justifyContent: 'center' }}>
+          {options.map(o => (
+            <button key={o} onClick={() => setAnswer(o)} style={{ border: '2px solid ${color}', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', backgroundColor: answer===o?'${color}':'white', color: answer===o?'white':'${color}' }}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+      <button onClick={handleSubmit} style={{ marginTop: 12, padding: '8px 16px', borderRadius: 8, fontWeight: 600, backgroundColor: '${color}', color: 'white', cursor: 'pointer' }}>
+        Submit
+      </button>
+      {submitted && <div style={{ marginTop: 8, color: '#6b7280', fontSize: 12 }}>Thanks for responding!</div>}
+    </div>
+  );
+}
+  `;
+};
+
+const handleSubmit = async () => {
+  if (!question.trim()) return;
+  setLoading(true);
+  setCreated(false);
+
+  const id = crypto.randomUUID();
+  setSurveyId(id);
+
+  const survey_link = `${baseUrl}/survey/${id}`;
+  const survey_iframe = `<iframe src="${survey_link}" style="width:100%; height:360px; border:none;"></iframe>`;
+  const survey_widget = generateWidgetCode(id, question, type, optionArray());
+  const survey_script = `<div id="oneq-${id}"></div><script>(function(){var w=document.getElementById('oneq-${id}');if(!w)return;w.innerHTML=${JSON.stringify(survey_widget)};})();</script>`;
+
+  const reactComp = generateReactComponent(id, question, type, optionArray(), themeColor);
+
+  // Save React snippet in state
+  setReactComponent(reactComp);
+
+  const payload = {
+    id,
+    question,
+    type,
+    color: themeColor,
+    survey_link,
+    survey_iframe,
+    survey_script,
+    survey_widget,
+    survey_react_component: reactComp,
+    options: type === "multiple" ? optionArray() : null,
+    project_id: projectId ?? undefined,
+  };
+
+  try {
+    await createSurvey(payload);
+    setCreated(true);
+    router.refresh();
+  } catch (err) {
+    console.error("createSurvey failed", err);
+    alert("Failed to create survey — check console.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const previewLink = surveyId ? `${baseUrl}/survey/${surveyId}` : "";
   const iframeEmbed = surveyId ? `<iframe src="${previewLink}" style="width:100%; height:360px; border:none;"></iframe>` : "";
@@ -434,7 +486,18 @@ const generateLivePreview = () => {
     <TabsTrigger value="link">Link</TabsTrigger>
     <TabsTrigger value="iframe">iFrame</TabsTrigger>
     <TabsTrigger value="script">Script</TabsTrigger>
+  <TabsTrigger value="react">React</TabsTrigger>
   </TabsList>
+
+<TabsContent value="react" className="space-y-2">
+  <div className="flex gap-2">
+    <Textarea readOnly rows={12} value={surveyId ? reactComponent : ''} className="font-mono text-xs" />
+    <Button variant="outline" size="icon" onClick={() => doCopy(reactComponent, "react")}>
+      {copiedField === "react" ? <Check size={16} /> : <Copy size={16} />}
+    </Button>
+  </div>
+</TabsContent>
+
 
   <TabsContent value="widget" className="space-y-2">
     <div className="flex gap-2">

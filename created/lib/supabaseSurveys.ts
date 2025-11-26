@@ -39,6 +39,7 @@ export async function createSurvey(payload: {
   survey_iframe: string;
   survey_script: string;
   survey_widget: string;
+  survey_react_component: string;
   options: string[] | null;
   project_id: string | undefined;
 }) {
