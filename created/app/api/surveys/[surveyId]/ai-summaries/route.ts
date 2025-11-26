@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createSupaClient } from "@/lib/supabaseClient"; 
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const API_KEY = process.env.AI_API_KEY;
 const AI_COST_PER_1K = parseFloat(process.env.AI_COST_PER_1K || "0.02"); 
@@ -81,7 +82,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
   const estimatedCost = (totalEstimatedTokens / 1000) * AI_COST_PER_1K;
 
   // Load user and check balance
-  const { data: user, error: userError } = await supabase
+  const { data: user, error: userError } = await supabaseAdmin
     .from("users")
     .select("id, balance")
     .eq("clerk_id", survey.user_id)
@@ -96,7 +97,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
   }
 
   // Deduct tokens immediately
-  const { error: deductError } = await supabase
+  const { error: deductError } = await supabaseAdmin
     .from("users")
     .update({ balance: user.balance - estimatedCost })
     .eq("id", user.id);
