@@ -237,14 +237,17 @@ export default function Overview({ projectId }: OverviewProps) {
         <h1 className="text-3xl font-bold">Project Overview</h1>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-2 text-red-600 hover:bg-red-50"
-            onClick={() => handleDeleteAll()}
-          >
-            <Trash size={16} /> Delete All
-          </Button>
+          {surveys.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 text-red-600 hover:bg-red-50"
+              onClick={() => handleDeleteAll()}
+            >
+              <Trash size={16} /> Delete All
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
@@ -261,6 +264,27 @@ export default function Overview({ projectId }: OverviewProps) {
           </Button>
         </div>
       </div>
+
+      {/* Survey and Response Totals */}
+      {surveys.length > 0 && (
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+            <span className="font-semibold text-blue-900">Total Surveys:</span>
+            <span className="text-blue-700">{surveys.length}</span>
+          </div>
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+            <span className="font-semibold text-green-900">Total Responses:</span>
+            <span className="text-green-700">
+              {surveys.reduce((total, survey) => {
+                const surveyResponses = survey.type === "text"
+                  ? (textResponses[survey.id]?.length || 0)
+                  : Object.values(responsesCounts[survey.id] || {}).reduce((s, n) => s + n, 0);
+                return total + surveyResponses;
+              }, 0)}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-7xl">
         {surveys.length === 0 && <p className="text-gray-500 col-span-2">No surveys created yet.</p>}
@@ -469,27 +493,27 @@ export default function Overview({ projectId }: OverviewProps) {
             </TabsContent>
 
             {/* EMBEDS TAB */}
-            <TabsContent value="embeds">
-              {selectedSurvey ? (
-                <Card className="shadow-sm">
-                  {["survey_link", "survey_iframe", "survey_script", "survey_widget"].map(key => (
-                    <div key={key} className="mb-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold">{key.replace("survey_", "").toUpperCase()}</span>
-                        <Button size="sm" variant="outline" onClick={() => copy(selectedSurvey[key] || "", key)}>
-                          {copiedField === key ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
-                        </Button>
-                      </div>
-                      <pre className="bg-gray-100 p-1 rounded text-xs font-mono overflow-x-hidden break-words">
-                        {selectedSurvey[key]}
-                      </pre>
-                    </div>
-                  ))}
-                </Card>
-              ) : (
-                <p className="text-gray-500">No survey selected.</p>
-              )}
-            </TabsContent>
+<TabsContent value="embeds">
+  {selectedSurvey ? (
+    <Card className="shadow-sm space-y-3 p-3">
+      {["survey_link", "survey_iframe", "survey_script", "survey_widget", "survey_react_component"].map(key => (
+        <div key={key} className="mb-2">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-semibold">{key.replace("survey_", "").replace("_component", " (React)").toUpperCase()}</span>
+            <Button size="sm" variant="outline" onClick={() => copy(selectedSurvey[key] || "", key)}>
+              {copiedField === key ? <Check size={16} className="text-green-600" /> : <Copy size={16} />}
+            </Button>
+          </div>
+          <pre className="bg-gray-100 p-1 rounded text-xs font-mono overflow-x-hidden break-words">
+            {selectedSurvey[key]}
+          </pre>
+        </div>
+      ))}
+    </Card>
+  ) : (
+    <p className="text-gray-500">No survey selected.</p>
+  )}
+</TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
