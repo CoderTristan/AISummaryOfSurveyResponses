@@ -18,11 +18,11 @@ import {
 import { getBalance } from "@/lib/userData";
 
 interface ResponsesPageProps {
-    projectId: string;
+  projectId: string;
   searchParams?: any;
 }
 
-export default function Response({projectId}: ResponsesPageProps) {
+export default function Response({ projectId }: ResponsesPageProps) {
   const [surveys, setSurveys] = useState<any[]>([]);
   const [responses, setResponses] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
@@ -32,30 +32,28 @@ export default function Response({projectId}: ResponsesPageProps) {
   const [balance, setBalance] = useState<number | null>(null);
   const [costPer1k, setCostPer1k] = useState<number>(0.02); // default
 
-  // Add this inside your component, alongside other functions:
-async function refreshSurvey(surveyId: string) {
-  setLoadingSurvey((prev) => new Set(prev).add(surveyId));
-  const r = await getSurveyResponses(surveyId, "desc");
-  setResponses((prev) => ({ ...prev, [surveyId]: Array.isArray(r) ? r : [] }));
-  setLoadingSurvey((prev) => {
-    const next = new Set(prev);
-    next.delete(surveyId);
-    return next;
-  });
-}
+  async function refreshSurvey(surveyId: string) {
+    setLoadingSurvey((prev) => new Set(prev).add(surveyId));
+    const r = await getSurveyResponses(surveyId, "desc");
+    setResponses((prev) => ({ ...prev, [surveyId]: Array.isArray(r) ? r : [] }));
+    setLoadingSurvey((prev) => {
+      const next = new Set(prev);
+      next.delete(surveyId);
+      return next;
+    });
+  }
 
   useEffect(() => {
     load();
     fetchBalance();
   }, []);
 
-  // ⭐ UPDATED: load tokens directly from Supabase
+  // ⭐ balance loader
   async function fetchBalance() {
     try {
-      const data = await getBalance()
-
+      const data = await getBalance();
       setBalance(typeof data?.balance === "number" ? data.balance : 0);
-      setCostPer1k(0.02); // unchanged default
+      setCostPer1k(0.02);
     } catch (e) {
       console.warn("balance fetch failed", e);
     }
@@ -85,10 +83,10 @@ async function refreshSurvey(surveyId: string) {
     });
   }
 
+  // ⭐ UPDATED TOKEN ESTIMATOR
   function estimateTokensForText(text: string) {
     if (!text) return 0;
-    const words = text.trim().split(/\s+/).length;
-    return Math.max(1, Math.ceil(words * 1.5));
+    return Math.max(1, Math.ceil(text.length / 4)); // ~4 chars/token
   }
 
   function estimateCostForTokens(tokens: number) {
@@ -128,74 +126,88 @@ async function refreshSurvey(surveyId: string) {
     });
   }
 
-async function generateSummary(surveyId: string, suppressAlert = false) {
-  const survey = surveys.find((s) => s.id === surveyId);
-  if (!survey) return false;
+  // ⭐ GENERATE SUMMARY
+  async function generateSummary(surveyId: string, suppressAlert = false) {
+    const survey = surveys.find((s) => s.id === surveyId);
+    if (!survey) return false;
 
-  const list = responses[surveyId] || [];
-  const joinedAnswers = list.map((r) => String(r.answer || "")).join("\n");
-  const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
-  const promptTokens = estimateTokensForText(promptEstimate);
-  const expectedCompletionTokens = 350;
-  const totalEstimate = promptTokens + expectedCompletionTokens;
-  const estCost = estimateCostForTokens(totalEstimate);
+    const list = responses[surveyId] || [];
+    const joinedAnswers = list.map((r) => String(r.answer || "")).join("\n");
+    const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
+    const promptTokens = estimateTokensForText(promptEstimate);
+    const expectedCompletionTokens = 350;
+    const totalEstimate = promptTokens + expectedCompletionTokens;
+    const estCost = estimateCostForTokens(totalEstimate);
 
-  if (balance === null || balance < estCost) {
-    if (!suppressAlert) {
-      alert(`Not enough tokens to generate AI summary.\nRequired: ${totalEstimate}, Available: ${balance ?? 0}`);
-    }
-    return false;
-  }
-
-  setGenerating((prev) => new Set(prev).add(surveyId));
-  try {
-    const res = await fetch(`/api/surveys/${surveyId}/ai-summaries`, { method: "POST" });
-    if (!res.ok) {
+    if (balance === null || balance < estCost) {
       if (!suppressAlert) {
-        const t = await res.text();
-        alert("Generate failed: " + t);
+        alert(
+          `Not enough tokens to generate AI summary.\nRequired: ${totalEstimate}, Available: ${
+            balance ?? 0
+          }`
+        );
       }
       return false;
     }
 
-    const data = await res.json();
-    if (data?.generated) {
-      const { summary, sentiment, actions } = data.generated;
-      setSurveys((prev) =>
-        prev.map((s) => (s.id === surveyId ? { ...s, ai_summary: summary, ai_sentiment: sentiment, ai_actions: actions } : s))
-      );
+    setGenerating((prev) => new Set(prev).add(surveyId));
+    try {
+      const res = await fetch(`/api/surveys/${surveyId}/ai-summaries`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        if (!suppressAlert) {
+          const t = await res.text();
+          alert("Generate failed: " + t);
+        }
+        return false;
+      }
+
+      const data = await res.json();
+      if (data?.generated) {
+        const { summary, sentiment, actions } = data.generated;
+        setSurveys((prev) =>
+          prev.map((s) =>
+            s.id === surveyId
+              ? {
+                  ...s,
+                  ai_summary: summary,
+                  ai_sentiment: sentiment,
+                  ai_actions: actions,
+                }
+              : s
+          )
+        );
+      }
+
+      await fetchBalance();
+      return true;
+    } catch (err) {
+      console.error("generate error", err);
+      if (!suppressAlert) alert("Generation failed — see console");
+      return false;
+    } finally {
+      setGenerating((prev) => {
+        const next = new Set(prev);
+        next.delete(surveyId);
+        return next;
+      });
     }
-
-    await fetchBalance();
-    return true;
-  } catch (err) {
-    console.error("generate error", err);
-    if (!suppressAlert) alert("Generation failed — see console");
-    return false;
-  } finally {
-    setGenerating((prev) => {
-      const next = new Set(prev);
-      next.delete(surveyId);
-      return next;
-    });
   }
-}
-
-
 
   async function generateAll() {
-  if (!confirm("Generate AI summaries for ALL surveys? This will consume tokens.")) return;
+    if (!confirm("Generate AI summaries for ALL surveys? This will consume tokens.")) return;
 
-  let failed = false;
-  for (const s of surveys) {
-    const ok = await generateSummary(s.id, true); // suppressAlert = true
-    if (!ok) failed = true;
-  }
+    let failed = false;
+    for (const s of surveys) {
+      const ok = await generateSummary(s.id, true);
+      if (!ok) failed = true;
+    }
 
-  if (failed) {
-    alert("Some surveys could not be generated due to insufficient tokens.");
+    if (failed) {
+      alert("Some surveys could not be generated due to insufficient tokens.");
+    }
   }
-}
 
   if (loading) {
     return (
@@ -206,7 +218,10 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
   }
 
   const totalSurveys = surveys.length;
-  const totalResponses = Object.values(responses).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+  const totalResponses = Object.values(responses).reduce(
+    (sum, arr) => sum + (arr?.length || 0),
+    0
+  );
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
@@ -215,8 +230,12 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
 
         <div className="flex items-center gap-3">
           <div className="text-sm text-gray-600 mr-4">
-            <div>Total surveys: <strong>{totalSurveys}</strong></div>
-            <div>Total responses: <strong>{totalResponses}</strong></div>
+            <div>
+              Total surveys: <strong>{totalSurveys}</strong>
+            </div>
+            <div>
+              Total responses: <strong>{totalResponses}</strong>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -224,8 +243,8 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
               Tokens balance: <strong>{balance === null ? "—" : `${balance}`}</strong>
             </div>
             <Button variant="outline" size="sm" onClick={load}>
-  Refresh All
-</Button>
+              Refresh All
+            </Button>
             <Button variant="outline" size="sm" onClick={generateAll}>
               Generate All
             </Button>
@@ -240,7 +259,7 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
         const busy = loadingSurvey.has(survey.id);
         const isGenerating = generating.has(survey.id);
 
-        const joinedAnswers = (list || []).map(r => String(r.answer || "")).join("\n");
+        const joinedAnswers = (list || []).map((r) => String(r.answer || "")).join("\n");
         const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
         const promptTokens = estimateTokensForText(promptEstimate);
         const expectedCompletionTokens = 350;
@@ -252,27 +271,65 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
               <div className="flex items-start justify-between w-full">
                 <div>
                   <CardTitle className="text-xl font-semibold">{survey.question}</CardTitle>
-                  <div className="text-xs text-gray-500">{survey.type} • { (responses[survey.id] || []).length } responses</div>
+                  <div className="text-xs text-gray-500">
+                    {survey.type} • {(responses[survey.id] || []).length} responses
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
-                  <div className="text-xs text-gray-600">Estimate: {totalEstimate} tokens</div>
+                  <div className="text-xs text-gray-600">
+                    Estimate: {totalEstimate} tokens
+                  </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => toggleSort(survey.id)} className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleSort(survey.id)}
+                      className="flex items-center gap-2"
+                    >
                       <ArrowUpDown className="w-4 h-4" /> {direction.toUpperCase()}
                     </Button>
 
-                    <Button variant="ghost" size="sm" onClick={() => refreshSurvey(survey.id)} disabled={loadingSurvey.has(survey.id)}>
-  {loadingSurvey.has(survey.id) ? <Loader2 className="animate-spin w-4 h-4" /> : "Refresh"}
-</Button>
-
-                    <Button variant="ghost" size="sm" onClick={() => generateSummary(survey.id)} disabled={isGenerating}>
-                      {isGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : "Generate AI Summary"}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => refreshSurvey(survey.id)}
+                      disabled={loadingSurvey.has(survey.id)}
+                    >
+                      {loadingSurvey.has(survey.id) ? (
+                        <Loader2 className="animate-spin w-4 h-4" />
+                      ) : (
+                        "Refresh"
+                      )}
                     </Button>
 
-                    <Button variant="destructive" size="sm" onClick={() => deleteAll(survey.id)} disabled={busy}>
-                      {busy ? <Loader2 className="animate-spin w-4 h-4" /> : <><Trash2 className="w-4 h-4" /> Delete All</>}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => generateSummary(survey.id)}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="animate-spin w-4 h-4" />
+                      ) : (
+                        "Generate AI Summary"
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteAll(survey.id)}
+                      disabled={busy}
+                    >
+                      {busy ? (
+                        <Loader2 className="animate-spin w-4 h-4" />
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" /> Delete All
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -280,18 +337,40 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {/* ⭐ AI SUMMARY BLOCK WITH ACTION CARDS */}
               {survey.ai_summary ? (
                 <div className="p-3 bg-gray-50 border rounded">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">AI Summary</div>
-                    <div className="text-sm text-gray-600">Sentiment: <strong>{(survey.ai_sentiment ?? 0).toFixed(2)}</strong></div>
+                    <div className="text-sm text-gray-600">
+                      Sentiment:{" "}
+                      <strong>{(survey.ai_sentiment ?? 0).toFixed(2)}</strong>
+                    </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-800 whitespace-pre-wrap">{survey.ai_summary}</div>
+
+                  <div className="mt-2 text-sm text-gray-800 whitespace-pre-wrap">
+                    {survey.ai_summary}
+                  </div>
+
+                  {Array.isArray(survey.ai_actions) && survey.ai_actions.length > 0 && (
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {survey.ai_actions.map((act: string, i: number) => (
+                        <div
+                          key={i}
+                          className="p-3 border rounded bg-white shadow-sm text-sm"
+                        >
+                          <strong>Action {i + 1}:</strong>
+                          <div className="mt-1 text-gray-700">{act}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-sm text-gray-500">No AI summary yet</div>
               )}
 
+              {/* RAW RESPONSES */}
               {sortedList.length === 0 && (
                 <p className="text-gray-500">No responses yet.</p>
               )}
@@ -303,10 +382,13 @@ async function generateSummary(surveyId: string, suppressAlert = false) {
                 >
                   <div className="w-full">
                     {survey.type === "text" ? (
-                      <p className="text-gray-800 whitespace-pre-wrap">{resp.answer}</p>
+                      <p className="text-gray-800 whitespace-pre-wrap">
+                        {resp.answer}
+                      </p>
                     ) : (
                       <div>
-                        <span className="text-gray-700 font-medium">Answer:</span> {String(resp.answer)}
+                        <span className="text-gray-700 font-medium">Answer:</span>{" "}
+                        {String(resp.answer)}
                       </div>
                     )}
                     <div className="text-xs text-gray-400 mt-1">
