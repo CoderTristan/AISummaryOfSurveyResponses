@@ -84,7 +84,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("id, balance")
-    .eq("id", survey.user_id)
+    .eq("clerk_id", survey.user_id)
     .single();
 
   if (userError || !user) {
