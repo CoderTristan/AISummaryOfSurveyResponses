@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Mail, Clock, CheckCircle2, Loader2 } from "lucide-react";
 import { getProject, updateProjectEmailFields} from "@/lib/supabaseProjects";
+import { useSubscription } from "@/hooks/use-sub";
 
 interface EmailSettingsProps {
   projectId: string;
@@ -28,6 +29,8 @@ export default function EmailSettings({ projectId }: EmailSettingsProps) {
     notify_email: "",
   });
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const subscription = useSubscription();
+
 
   useEffect(() => {
     if (!projectId) return;
@@ -78,6 +81,33 @@ export default function EmailSettings({ projectId }: EmailSettingsProps) {
       </div>
     );
   }
+
+  if (!subscription) {
+  return (
+    <div className="max-w-3xl mx-auto p-6">
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="animate-spin text-gray-400" size={32} />
+      </div>
+    </div>
+  );
+}
+
+if (subscription.plan === "free") {
+  return (
+    <div className="max-w-2xl mx-auto p-8 mt-10 text-center border rounded-xl bg-blue-50 border-blue-200">
+      <p className="text-blue-700 mb-4">
+        Upgrade your plan to unlock automated email reports.
+      </p>
+      <a
+        href="/pricing"
+        className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+      >
+        Upgrade Plan →
+      </a>
+    </div>
+  );
+}
+
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">

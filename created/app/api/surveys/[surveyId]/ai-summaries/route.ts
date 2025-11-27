@@ -168,6 +168,14 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
         ? (realTotalTokens / 1000) * AI_COST_PER_1K
         : estimatedCost;
 
+    // Convert Gemini's returned dollar cost → approximate token count
+// Example: 0.000081 → 81 tokens
+    let realTokenApprox = null;
+    if (realCost != null) {
+      realTokenApprox = Math.round(realCost * 1_000_000);
+    }
+
+
     // ===============================================================
     // ⭐ IMPROVED JSON EXTRACTION (the ONLY part changed)
     // ===============================================================
@@ -233,21 +241,21 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
       });
     }
 
-    // SUCCESS
     return NextResponse.json({
-      success: true,
-      generated: {
-        summary: finalSummary,
-        sentiment: finalSentiment,
-        actions: finalActions,
-      },
-      estimate: {
-        tokens: realTotalTokens ?? totalEstimatedTokens,
-        cost: realCost,
-        usedPrompt: realPromptTokens,
-        usedCompletion: realCompletionTokens,
-      },
-    });
+  success: true,
+  generated: {
+    summary: finalSummary,
+    sentiment: finalSentiment,
+    actions: finalActions,
+  },
+  estimate: {
+    tokens: realTotalTokens ?? totalEstimatedTokens,
+    cost: realCost,
+    usedPrompt: realPromptTokens,
+    usedCompletion: realCompletionTokens,
+  },
+});
+
   } catch (err) {
     console.error("Error generating summary:", err);
     return NextResponse.json({ error: "Generation failed" }, { status: 500 });
