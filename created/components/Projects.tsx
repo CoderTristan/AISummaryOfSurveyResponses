@@ -113,24 +113,31 @@ const maxProjects = PLAN_LIMITS[plan]?.projects ?? 1;
 
   // Create project
   const handleCreate = async () => {
-    if (!projectName.trim()) return;
+  if (!projectName.trim()) return;
 
-    setLoading(true);
-    try {
-      await createProject({
-        id: crypto.randomUUID(),
-        name: projectName.trim(),
-      });
-      setOpen(false);
-      setProjectName("");
-      await fetchProjects();
-    } catch (error) {
-      console.error("Failed to create project:", error);
-      alert("Error creating project. Check console.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Prevent bypassing limit
+  if (projects.length >= maxProjects) {
+    alert(`You cannot create more than ${maxProjects} projects on the ${plan} plan.`);
+    return;
+  }
+
+  setLoading(true);
+  try {
+    await createProject({
+      id: crypto.randomUUID(),
+      name: projectName.trim(),
+    });
+
+    setOpen(false);
+    setProjectName("");
+    await fetchProjects();
+  } catch (error) {
+    console.error("Failed to create project:", error);
+    alert("Error creating project. Check console.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Delete project
   const handleDelete = async (projectId: string) => {
@@ -149,13 +156,21 @@ const maxProjects = PLAN_LIMITS[plan]?.projects ?? 1;
       {/* Header */}
       <div className="flex items-center justify-between w-full">
         <h1 className="text-4xl font-bold tracking-tight">Projects</h1>
-        <Button 
-          className="flex items-center gap-2" 
-          onClick={() => setOpen(true)}
-        >
-          <Plus size={18} />
-          New Project
-        </Button>
+        <Button
+  className="flex items-center gap-2"
+  onClick={() => {
+    if (projects.length >= maxProjects) {
+      alert(`You have reached your project limit for the ${plan} plan.`);
+      return;
+    }
+    setOpen(true);
+  }}
+  disabled={!subscription} // Disables during subscription loading
+>
+  <Plus size={18} />
+  New Project
+</Button>
+
       </div>
 
       <p className="text-muted-foreground text-base">
@@ -260,20 +275,7 @@ const maxProjects = PLAN_LIMITS[plan]?.projects ?? 1;
               disabled={loading}
             />
 
-            <Button
-  className="flex items-center gap-2"
-  onClick={() => {
-    if (projects.length >= maxProjects) {
-      alert(`You have reached your project limit for the ${plan} plan.`);
-      return;
-    }
-    setOpen(true);
-  }}
-  disabled={!subscription} // Disables during subscription loading
->
-  <Plus size={18} />
-  New Project
-</Button>
+            <Button className="w-full" onClick={handleCreate} disabled={loading} > {loading ? "Creating..." : "Create Project"} </Button>
 
             <Button
               variant="outline"

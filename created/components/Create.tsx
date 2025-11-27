@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Add these imports at the top
 import { useParams, useRouter } from "next/navigation";
-import { createSurvey } from "@/lib/supabaseSurveys";
+import { createSurvey, getSurveys } from "@/lib/supabaseSurveys";
+import { useSubscription } from "@/hooks/use-sub";
+import { PLAN_LIMITS } from "@/lib/plans";
+import Link from "next/link";
 
 export default function CreateSurveyPage() {
   const router = useRouter();
@@ -42,6 +45,21 @@ export default function CreateSurveyPage() {
   const [themeColor, setThemeColor] = useState<string>("#6366f1");
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+  const subscription = useSubscription();
+const plan = subscription?.plan || "free";
+const maxSurveys = PLAN_LIMITS[plan]?.surveys ?? 3; // whatever limit you defined
+
+const [surveys, setSurveys] = useState<any[]>([]);
+
+useEffect(() => {
+  const load = async () => {
+    if (!projectId) return;
+    const existing = await getSurveys(projectId);
+    setSurveys(existing || []);
+  };
+  load();
+}, [projectId]);
+
 
   const surveyExamples = [
     {
@@ -302,6 +320,11 @@ export default function OneQWidget({ surveyId }: OneQWidgetProps) {
 
 
 const handleSubmit = async () => {
+  if (surveys.length >= maxSurveys) {
+    alert(`You cannot create more than ${maxSurveys} surveys on the ${plan} plan.`);
+    return;
+  }
+
   if (!question.trim()) return;
   setLoading(true);
   setCreated(false);
@@ -367,14 +390,32 @@ const handleSubmit = async () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-semibold text-gray-900">Create Survey</h1>
-            <Button 
-              onClick={() => setOpenForm(true)} 
-              size="sm"
-              className="gap-2"
-            >
+            <Button
+  onClick={() => {
+    if (surveys.length >= maxSurveys) {
+      alert(`You've reached your survey limit for the ${plan} plan.`);
+      return;
+    }
+    setOpenForm(true);
+  }}
+  size="sm"
+  className="gap-2"
+  disabled={!subscription}
+>
+
               <Plus size={16} />
               Create new
             </Button>
+            {surveys.length >= maxSurveys && (
+  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <p className="text-sm text-blue-700">
+      You’ve reached your survey limit for the <strong>{plan}</strong> plan.
+    </p>
+    <Link href="/pricing" className="text-blue-600 underline text-sm font-medium">
+      Upgrade to unlock more surveys →
+    </Link>
+  </div>
+)}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
