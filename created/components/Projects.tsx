@@ -17,6 +17,8 @@ import { getSurveyResponses } from "@/lib/supabaseResponses";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { useSubscription } from "@/hooks/use-sub";
+import { PLAN_LIMITS } from "@/lib/plans";
 
 interface Project {
   id: string;
@@ -35,10 +37,12 @@ export default function Projects() {
   const [totalSurveys, setTotalSurveys] = useState(0);
   const [totalResponses, setTotalResponses] = useState(0);
   const [loadingTotals, setLoadingTotals] = useState(true);
+const subscription = useSubscription();
+const plan = subscription?.plan || "free";
+const maxProjects = PLAN_LIMITS[plan]?.projects ?? 1;
 
   const router = useRouter();
 
-  // Fetch totals across all projects
   const fetchTotals = useCallback(async () => {
     if (!userId || projects.length === 0) {
       setLoadingTotals(false);
@@ -180,6 +184,21 @@ export default function Projects() {
         </div>
       )}
 
+      {projects.length >= maxProjects && (
+  <div className="p-4 border border-blue-300 bg-blue-50 rounded-lg">
+    <p className="text-blue-700 font-medium">
+      You’ve reached your project limit for the <strong>{plan}</strong> plan.
+    </p>
+    <Link
+      href="/pricing"
+      className="text-blue-600 underline text-sm"
+    >
+      Upgrade to increase your limits →
+    </Link>
+  </div>
+)}
+
+
       {/* Projects List */}
       <div className="mt-8 space-y-4">
         {projects.length === 0 && (
@@ -241,13 +260,20 @@ export default function Projects() {
               disabled={loading}
             />
 
-            <Button 
-              className="w-full" 
-              onClick={handleCreate} 
-              disabled={loading}
-            >
-              {loading ? "Creating..." : "Create Project"}
-            </Button>
+            <Button
+  className="flex items-center gap-2"
+  onClick={() => {
+    if (projects.length >= maxProjects) {
+      alert(`You have reached your project limit for the ${plan} plan.`);
+      return;
+    }
+    setOpen(true);
+  }}
+  disabled={!subscription} // Disables during subscription loading
+>
+  <Plus size={18} />
+  New Project
+</Button>
 
             <Button
               variant="outline"
