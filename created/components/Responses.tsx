@@ -31,6 +31,7 @@ export default function Response({ projectId }: ResponsesPageProps) {
   const [generating, setGenerating] = useState<Set<string>>(new Set());
   const [balance, setBalance] = useState<number | null>(null);
   const [costPer1k, setCostPer1k] = useState<number>(0.02); // default
+  const [showAllResponses, setShowAllResponses] = useState<Record<string, boolean>>({});
 
   async function refreshSurvey(surveyId: string) {
     setLoadingSurvey((prev) => new Set(prev).add(surveyId));
@@ -48,7 +49,6 @@ export default function Response({ projectId }: ResponsesPageProps) {
     fetchBalance();
   }, []);
 
-  // ⭐ balance loader
   async function fetchBalance() {
     try {
       const data = await getBalance();
@@ -83,10 +83,9 @@ export default function Response({ projectId }: ResponsesPageProps) {
     });
   }
 
-  // ⭐ UPDATED TOKEN ESTIMATOR
   function estimateTokensForText(text: string) {
     if (!text) return 0;
-    return Math.max(1, Math.ceil(text.length / 4)); // ~4 chars/token
+    return Math.max(1, Math.ceil(text.length / 4));
   }
 
   function estimateCostForTokens(tokens: number) {
@@ -126,7 +125,6 @@ export default function Response({ projectId }: ResponsesPageProps) {
     });
   }
 
-  // ⭐ GENERATE SUMMARY
   async function generateSummary(surveyId: string, suppressAlert = false) {
     const survey = surveys.find((s) => s.id === surveyId);
     if (!survey) return false;
@@ -142,9 +140,7 @@ export default function Response({ projectId }: ResponsesPageProps) {
     if (balance === null || balance < estCost) {
       if (!suppressAlert) {
         alert(
-          `Not enough tokens to generate AI summary.\nRequired: ${totalEstimate}, Available: ${
-            balance ?? 0
-          }`
+          `Not enough tokens to generate AI summary.\nRequired: ${totalEstimate}, Available: ${balance ?? 0}`
         );
       }
       return false;
@@ -152,9 +148,7 @@ export default function Response({ projectId }: ResponsesPageProps) {
 
     setGenerating((prev) => new Set(prev).add(surveyId));
     try {
-      const res = await fetch(`/api/surveys/${surveyId}/ai-summaries`, {
-        method: "POST",
-      });
+      const res = await fetch(`/api/surveys/${surveyId}/ai-summaries`, { method: "POST" });
       if (!res.ok) {
         if (!suppressAlert) {
           const t = await res.text();
@@ -258,6 +252,9 @@ export default function Response({ projectId }: ResponsesPageProps) {
         const sortedList = sorted(list, direction);
         const busy = loadingSurvey.has(survey.id);
         const isGenerating = generating.has(survey.id);
+        const showAll = showAllResponses[survey.id] || false;
+
+        const visibleResponses = showAll ? sortedList : sortedList.slice(0, 10);
 
         const joinedAnswers = (list || []).map((r) => String(r.answer || "")).join("\n");
         const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
@@ -272,7 +269,7 @@ export default function Response({ projectId }: ResponsesPageProps) {
                 <div>
                   <CardTitle className="text-xl font-semibold">{survey.question}</CardTitle>
                   <div className="text-xs text-gray-500">
-                    {survey.type} • {(responses[survey.id] || []).length} responses
+                    {survey.type} • {list.length} responses
                   </div>
                 </div>
 
@@ -295,13 +292,9 @@ export default function Response({ projectId }: ResponsesPageProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => refreshSurvey(survey.id)}
-                      disabled={loadingSurvey.has(survey.id)}
+                      disabled={busy}
                     >
-                      {loadingSurvey.has(survey.id) ? (
-                        <Loader2 className="animate-spin w-4 h-4" />
-                      ) : (
-                        "Refresh"
-                      )}
+                      {busy ? <Loader2 className="animate-spin w-4 h-4" /> : "Refresh"}
                     </Button>
 
                     <Button
@@ -310,89 +303,34 @@ export default function Response({ projectId }: ResponsesPageProps) {
                       onClick={() => generateSummary(survey.id)}
                       disabled={isGenerating}
                     >
-                      {isGenerating ? (
-                        <Loader2 className="animate-spin w-4 h-4" />
-                      ) : (
-                        "Generate AI Summary"
-                      )}
+                      {isGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : "Generate AI Summary"}
                     </Button>
 
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteAll(survey.id)}
-                      disabled={busy}
-                    >
-                      {busy ? (
-                        <Loader2 className="animate-spin w-4 h-4" />
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4" /> Delete All
-                        </>
-                      )}
-                    </Button>
+                    {list.length > 0 && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteAll(survey.id)}
+                        disabled={busy}
+                      >
+                        {busy ? <Loader2 className="animate-spin w-4 h-4" /> : (
+                          <>
+                            <Trash2 className="w-4 h-4" /> Delete All
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
             </CardHeader>
 
             <CardContent className="space-y-4">
-
-  {survey.ai_summary ? (
-    <div className="p-3 bg-gray-50 border rounded space-y-3">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="font-medium text-lg">AI Summary</div>
-        <div className="text-sm text-gray-600">
-          Sentiment: <strong>{Number(survey.ai_sentiment).toFixed(2)}</strong>
-        </div>
-      </div>
-
-      {/* Summary Text */}
-      <div className="text-sm text-gray-800 whitespace-pre-wrap">
-        {survey.ai_summary}
-      </div>
-
-      {/* Action Recommendations */}
-      {Array.isArray(survey.ai_actions) && survey.ai_actions.length > 0 && (
-        <div className="pt-2 space-y-2">
-          <div className="font-medium text-sm text-gray-700">
-            Recommended Actions:
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {survey.ai_actions.map((action: string, i: number) => (
-              <div
-                key={i}
-                className="p-3 border rounded-lg bg-white shadow-sm text-sm text-gray-800"
-              >
-                {action}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  ) : (
-    <div className="text-sm text-gray-500">No AI summary yet</div>
-  )}
-
-              {/* RAW RESPONSES */}
-              {sortedList.length === 0 && (
-                <p className="text-gray-500">No responses yet.</p>
-              )}
-
-              {sortedList.map((resp) => (
-                <div
-                  key={resp.id}
-                  className="p-4 border rounded-lg flex justify-between items-start"
-                >
+              {visibleResponses.map((resp) => (
+                <div key={resp.id} className="p-4 border rounded-lg flex justify-between items-start">
                   <div className="w-full">
                     {survey.type === "text" ? (
-                      <p className="text-gray-800 whitespace-pre-wrap">
-                        {resp.answer}
-                      </p>
+                      <p className="text-gray-800 whitespace-pre-wrap">{resp.answer}</p>
                     ) : (
                       <div>
                         <span className="text-gray-700 font-medium">Answer:</span>{" "}
@@ -414,6 +352,18 @@ export default function Response({ projectId }: ResponsesPageProps) {
                   </Button>
                 </div>
               ))}
+
+              {list.length > 10 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setShowAllResponses((prev) => ({ ...prev, [survey.id]: !showAll }))
+                  }
+                >
+                  {showAll ? "Show Less" : `Show All Responses (${list.length})`}
+                </Button>
+              )}
             </CardContent>
           </Card>
         );
