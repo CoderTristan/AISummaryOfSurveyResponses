@@ -24,7 +24,7 @@ export async function POST(
     );
   }
 
-  const {surveyId} = await params
+  const { surveyId } = await params;
   const supabase = createSupaClient();
 
   // Load survey
@@ -168,8 +168,10 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
         ? (realTotalTokens / 1000) * AI_COST_PER_1K
         : estimatedCost;
 
-    // --- Extract content ---
-    const content =
+    // ===============================================================
+    // ⭐ IMPROVED JSON EXTRACTION (the ONLY part changed)
+    // ===============================================================
+    const raw =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ??
       data?.choices?.[0]?.text ??
       "";
@@ -178,18 +180,31 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
       {};
 
     try {
-      const jsonStart = content.indexOf("{");
-      const jsonString = jsonStart >= 0 ? content.slice(jsonStart) : content;
-      parsed = JSON.parse(jsonString);
+      // remove code fences if present
+      let cleaned = raw
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+      // extract the first { ... }
+      const first = cleaned.indexOf("{");
+      const last = cleaned.lastIndexOf("}");
+      if (first !== -1 && last !== -1) {
+        cleaned = cleaned.slice(first, last + 1);
+      }
+
+      parsed = JSON.parse(cleaned);
     } catch {
-      parsed.summary = String(content).slice(0, 2000);
+      parsed.summary = String(raw).slice(0, 2000);
       parsed.sentiment = 0;
       parsed.actions = [];
     }
 
+    // Guarantee required fields exist
     const finalSummary = parsed.summary ?? "";
     const finalSentiment =
       typeof parsed.sentiment === "number" ? parsed.sentiment : 0;
+    const finalActions = Array.isArray(parsed.actions) ? parsed.actions : [];
 
     // Save to DB
     const { error: updateError } = await supabase
@@ -197,7 +212,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
       .update({
         ai_summary: finalSummary,
         ai_sentiment: finalSentiment,
-        ai_actions: parsed.actions || [],
+        ai_actions: finalActions,
       })
       .eq("id", surveyId);
 
@@ -209,7 +224,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
         generated: {
           summary: finalSummary,
           sentiment: finalSentiment,
-          actions: parsed.actions || [],
+          actions: finalActions,
         },
         estimate: {
           tokens: realTotalTokens ?? totalEstimatedTokens,
@@ -224,7 +239,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
       generated: {
         summary: finalSummary,
         sentiment: finalSentiment,
-        actions: parsed.actions || [],
+        actions: finalActions,
       },
       estimate: {
         tokens: realTotalTokens ?? totalEstimatedTokens,
