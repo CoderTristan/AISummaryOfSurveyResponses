@@ -3,26 +3,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Zap, FileText, CheckCircle2, Mic } from "lucide-react";
-import heroImage from "@/assets/hero-image.jpg";
-import dashboardPreview from "@/assets/dashboard-preview.jpg";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-4 min-h-[600px] flex items-center overflow-hidden">
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: `url(${heroImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-          }}
-        >
-          <div className="absolute inset-0 bg-background/90" />
-        </div>
-
         <div className="container mx-auto relative z-10">
           <div className="max-w-3xl animate-fade-in-up">
             <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
@@ -104,13 +90,6 @@ export default function Home() {
             <p className="text-xl text-muted-foreground">
               All responses are neatly organized in a clean, intuitive dashboard.
             </p>
-          </div>
-          <div className="max-w-5xl mx-auto">
-            <Image
-              src={dashboardPreview}
-              alt="Dashboard preview"
-              className="rounded-2xl shadow-2xl border border-border"
-            />
           </div>
         </div>
       </section>
