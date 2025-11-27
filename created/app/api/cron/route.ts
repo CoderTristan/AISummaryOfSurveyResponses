@@ -2,15 +2,12 @@ import { NextResponse } from "next/server";
 import { createSupaClient } from "@/lib/supabaseClient";
 import { sendFrequencyEmail } from "@/lib/email";
 import { shouldSendEmail } from "@/lib/shouldSendEmail";
-import { auth } from "@clerk/nextjs/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-    const {userId} = await auth()
   const supabase = createSupaClient();
 
-  // 1. Get all projects with notify_enabled ON
   const { data: projects, error } = await supabase
     .from("projects")
     .select("id, user_id, report_frequency, notify_enabled, last_notified_at");
@@ -24,10 +21,8 @@ export async function GET() {
     if (!project.notify_enabled) continue;
 
     const shouldSend = shouldSendEmail(project);
-
     if (!shouldSend) continue;
 
-    // 2. Load surveys belonging to this project
     const { data: surveys } = await supabase
       .from("surveys")
       .select("question, responses_count")
@@ -35,24 +30,23 @@ export async function GET() {
 
     const formatted = surveys?.map((s: any) => ({
       question: s.question,
-      currentCount: s.responses[0]?.count ?? 0,
+      currentCount: s.responses_count ?? 0,
     }));
 
-    // 3. Get user email
     const { data: user } = await supabase
       .from("users")
       .select("email")
-      .eq("id", userId)
+      .eq("id", project.user_id)
       .single();
 
-    // 4. Send email
+    if (!user?.email) continue;
+
     await sendFrequencyEmail({
-      to: user?.email,
+      to: user.email,
       frequency: project.report_frequency,
       surveys: formatted,
     });
 
-    // 5. Update last_notified_at
     await supabase
       .from("projects")
       .update({ last_notified_at: new Date().toISOString() })

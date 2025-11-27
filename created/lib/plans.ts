@@ -3,14 +3,14 @@ export const PLANS = [
 name: 'Free',
 slug: 'free',
 price: { monthly: 0 },
-features: ['1 Project', '1 Survey', '100 Responses/Month', ],
+features: ['1 Project', '1 Survey', '100 Responses/Month', 'Response Charts'],
 stripePriceId: null,
 },
 {
 name: 'Pro',
 slug: 'pro',
 price: { monthly: 12 },
-features: ['All Free Tier Features', '10 Projects', '10 Surveys', '1,000 Responses/Month', 'No Survey Branding', "Email Summaries", "Charts"],
+features: ['All Free Tier Features', '10 Projects', '10 Surveys', '1,000 Responses/Month', 'No Survey Branding', "Email Summaries", "AI Summary"],
 stripePriceId: 'price_1SWJz6QybpDxd0p14KGxP0r2',
 },
 {
