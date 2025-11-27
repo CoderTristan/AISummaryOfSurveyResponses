@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Footer from "@/components/Footer";
+import PostHogProvider from "@/components/PostHogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,9 +49,11 @@ export default function RootLayout({
           <ClerkProvider>
             <Analytics />
             <SpeedInsights />
-          <Header />
-          {children}
-          <Footer />
+          <PostHogProvider>
+      <Header />
+      {children}
+      <Footer />
+    </PostHogProvider>
     </ClerkProvider>
         </body>
       </html>
