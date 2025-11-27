@@ -253,7 +253,6 @@ export default function Response({ projectId }: ResponsesPageProps) {
         const busy = loadingSurvey.has(survey.id);
         const isGenerating = generating.has(survey.id);
         const showAll = showAllResponses[survey.id] || false;
-
         const visibleResponses = showAll ? sortedList : sortedList.slice(0, 10);
 
         const joinedAnswers = (list || []).map((r) => String(r.answer || "")).join("\n");
@@ -326,6 +325,37 @@ export default function Response({ projectId }: ResponsesPageProps) {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {/* AI SUMMARY BOX */}
+              {survey.ai_summary ? (
+                <div className="p-3 bg-gray-50 border rounded space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-lg">AI Summary</div>
+                    <div className="text-sm text-gray-600">
+                      Sentiment: <strong>{Number(survey.ai_sentiment).toFixed(2)}</strong>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap">{survey.ai_summary}</div>
+                  {Array.isArray(survey.ai_actions) && survey.ai_actions.length > 0 && (
+                    <div className="pt-2 space-y-2">
+                      <div className="font-medium text-sm text-gray-700">Recommended Actions:</div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {survey.ai_actions.map((action: string, i: number) => (
+                          <div
+                            key={i}
+                            className="p-3 border rounded-lg bg-white shadow-sm text-sm text-gray-800"
+                          >
+                            {action}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">No AI summary yet</div>
+              )}
+
+              {/* RESPONSES */}
               {visibleResponses.map((resp) => (
                 <div key={resp.id} className="p-4 border rounded-lg flex justify-between items-start">
                   <div className="w-full">
@@ -353,6 +383,7 @@ export default function Response({ projectId }: ResponsesPageProps) {
                 </div>
               ))}
 
+              {/* SHOW ALL / SHOW LESS DROPDOWN */}
               {list.length > 10 && (
                 <Button
                   variant="outline"
