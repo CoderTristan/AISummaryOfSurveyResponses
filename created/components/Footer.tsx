@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Site Info */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold">One-Question Surveys</h2>
+          <h2 className="text-xl font-bold text-blue-500">One-Question Surveys</h2>
           <p className="text-muted-foreground text-sm">
             Simple, fast, and effective surveys to gather insights from your audience.
           </p>
@@ -16,7 +16,7 @@ export default function Footer() {
 
         {/* Site Links */}
         <div className="flex flex-col gap-2">
-          <h3 className="font-semibold text-lg">Quick Links</h3>
+          <h3 className="font-semibold text-lg text-blue-500">Quick Links</h3>
           <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
             Dashboard
           </Link>
@@ -33,7 +33,7 @@ export default function Footer() {
 
         {/* Legal Links */}
         <div className="flex flex-col gap-2">
-          <h3 className="font-semibold text-lg">Legal</h3>
+          <h3 className="font-semibold text-lg text-blue-500">Legal</h3>
           <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
             Terms of Service
           </Link>
