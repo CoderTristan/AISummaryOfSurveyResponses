@@ -18,9 +18,13 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b h-14 flex items-center px-4">
-      <Link href="/" className="text-blue-500 text-xl font-bold tracking-tight">
-        Generator
-      </Link>
+      <Link
+  href="/"
+  className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent"
+>
+  Generator
+</Link>
+
 
       <nav className="hidden md:flex space-x-2 ml-auto text-sm text-gray-600">
         {/* Public links */}
@@ -47,7 +51,7 @@ export default function Header() {
           <Link href="/dashboard/projects">
             <Button
               variant="default"
-              className="bg-blue-500 text-white hover:bg-blue-600"
+              className="bg-blue-400 text-white hover:bg-blue-300"
             >
               Dashboard
             </Button>

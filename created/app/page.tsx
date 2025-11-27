@@ -18,7 +18,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/sign-up">
-                <Button size="lg" className="group bg-blue-500 hover:bg-blue-600 text-white">
+                <Button size="lg" className="group bg-blue-500 hover:bg-blue-400 text-white">
                   Get Started Free
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -78,7 +78,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-b from-blue-400 to-blue-600 text-white">
+      <section className="py-20 px-4 bg-gradient-to-b from-blue-300 to-white text-white">
         <div className="container mx-auto text-center">
           <h2 className="text-4xl font-bold mb-4">Ready to Start Gathering Insights?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
@@ -86,13 +86,13 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/sign-up">
-              <Button size="lg" className="group bg-blue-500 hover:bg-blue-600 text-white">
+              <Button size="lg" className="group bg-blue-500 hover:bg-blue-400 text-white">
                 Start Your Survey
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
             <Link href="/pricing">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+              <Button size="lg" variant="outline" className="border-white text-blue-600 hover:bg-white hover:text-blue-500">
                 View Pricing
               </Button>
             </Link>
