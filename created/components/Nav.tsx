@@ -20,7 +20,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b h-14 flex items-center px-4">
 <Link
   href="/"
-  className="flex items-center gap-2 text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent"
+  className="flex items-center gap-2 text-xl text-black font-bold tracking-tight"
 >
   <img
     src="/favicon-32x32.png"
