@@ -33,3 +33,9 @@ export const PLAN_TOKEN_CREDITS: Record<string, number> = {
   pro: 500,
   premium: 2500,
 };
+
+export const PLANS_RANKED = [
+  { name: 'free', stripePriceId: null, rank: 0 },
+  { name: 'pro', stripePriceId: 'price_1SXkDUQybpDxd0p1uIaLwl7d', rank: 1 },
+  { name: 'premium', stripePriceId: 'price_1SXkCqQybpDxd0p1uCkJLpUn', rank: 2 },
+];
