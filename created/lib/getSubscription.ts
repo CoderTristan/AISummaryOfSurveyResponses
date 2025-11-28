@@ -8,12 +8,12 @@ export async function getUserSubscription() {
   const { userId } = await auth();
 
   if (!userId) {
-    return { plan: "free", status: "none" }; // treat not signed in as free
+    return { plan: "free", status: "none" };
   }
 
   const { data, error } = await supabaseAdmin
     .from("subscriptions")
-    .select("plan, status")
+    .select("plan_name, status")
     .eq("clerk_id", userId)
     .maybeSingle();
 
@@ -27,7 +27,7 @@ export async function getUserSubscription() {
   }
 
   return {
-    plan: data.plan ?? "free",
+    plan: data.plan_name ?? "free",
     status: data.status ?? "inactive",
   };
 }
