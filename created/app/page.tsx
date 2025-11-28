@@ -80,8 +80,8 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-b from-blue-300 to-white text-white">
         <div className="container mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Start Gathering Insights?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <h2 className="text-4xl text-black font-bold mb-4">Ready to Start Gathering Insights?</h2>
+          <p className="text-xl text-black mb-8 max-w-2xl mx-auto">
             Launch your first one-question survey and discover what your audience thinks—instantly.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
