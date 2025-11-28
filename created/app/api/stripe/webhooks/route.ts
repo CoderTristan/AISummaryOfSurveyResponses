@@ -25,75 +25,47 @@ export async function POST(req: Request) {
 		switch (event.type) {
 			case 'checkout.session.completed': {
   const session = event.data.object as Stripe.Checkout.Session;
-
   if (session.mode === 'subscription') {
     const clerkId = session.metadata?.clerkId;
     const priceId = session.metadata?.priceId;
+    const subscriptionId = session.subscription as string;
 
-    if (!clerkId || !priceId) {
-      throw new Error("Missing metadata from checkout session");
-    }
+    if (!clerkId || !priceId) throw new Error('Missing metadata from checkout session');
 
-    // 🎯 FIX: ENSURE subscription exists
-    const subscriptionId = session.subscription;
-    if (!subscriptionId) {
-      console.error("❌ No subscription ID found on session", session);
-      throw new Error("Stripe did not return subscription ID");
-    }
-
-    // Safe retrieve now
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const plan = PLANS.find(p => p.stripePriceId === priceId);
 
-    console.log("Upserting subscription:", {
-      clerkId,
-      subscriptionId,
-      priceId,
-      planName: plan?.name,
-    });
+    console.log('Upserting subscription:', { clerkId, subscriptionId, priceId, planName: plan?.name });
 
-    // Update subscription record
-    const { error: subError } = await supabaseAdmin
-      .from("subscriptions")
+      const { error } = await supabaseAdmin
+      .from('subscriptions')
       .upsert({
         clerk_id: clerkId,
         stripe_subscription_id: subscription.id,
         stripe_price_id: priceId,
         status: subscription.status,
-        plan_name: plan?.name || "Unknown",
+        plan_name: plan?.name || 'Unknown',
         current_period_end: new Date(subscription.current_period_end * 1000),
       });
-
-    if (subError) console.error("Supabase error:", subError);
-
-    // 🎯 TOKEN CREDIT LOGIC
-    if (plan?.name) {
-      const tokenCredits =
-        PLAN_TOKEN_CREDITS[plan.name.toLowerCase()] ?? 0;
-
+if (error) console.error('Supabase error:', error);
+  if (plan?.name) {
+      const tokenCredits = PLAN_TOKEN_CREDITS[plan.name.toLowerCase()] ?? 0;
+	  const bal = await getBalance()
+	  const newBalance = tokenCredits - bal
       if (tokenCredits > 0) {
-        const { data } = await getBalance()
-
-        const newBalance = (data ?? 0) + tokenCredits;
-
-        const { error: updateError } = await supabaseAdmin
-          .from("users")
-          .update({ balance: newBalance })
-          .eq("clerk_id", clerkId);
-
-        if (updateError) {
-          console.error("Failed to credit tokens:", updateError);
-        } else {
-          console.log(
-            `Credited ${tokenCredits} tokens to user ${clerkId}`
-          );
-        }
+        const { error } = await supabaseAdmin.from('users').update({
+			balance: newBalance,
+		});
+        if (error) {
+            console.error('Failed to credit tokens:', updateError);
+          } else {
+            console.log(`Credited ${tokenCredits} tokens to user ${clerkId}`);
+          }
       }
     }
   }
   break;
 }
-
 
 
 			case 'invoice.payment_succeeded': {
