@@ -1,19 +1,44 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Menu } from "lucide-react";
 
 export default function Legal() {
   const tosRef = useRef<HTMLDivElement | null>(null);
   const privacyRef = useRef<HTMLDivElement | null>(null);
+  const cookiesRef = useRef<HTMLDivElement | null>(null);
+
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showTop, setShowTop] = useState(false);
 
   const scrollTo = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Back to top visibility
+  useEffect(() => {
+    const handleScroll = () => setShowTop(window.scrollY > 400);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      {/* Toggle Button */}
+      <button
+        onClick={() => setSidebarOpen(prev => !prev)}
+        className="md:hidden fixed top-4 left-4 z-50 bg-accent px-3 py-2 rounded shadow border border-border flex items-center gap-2"
+      >
+        <Menu className="w-5 h-5" />
+        Legal
+      </button>
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border p-6 sticky top-0 h-screen hidden md:block">
-        <h2 className="font-semibold text-lg mb-4">Legal</h2>
+      <aside
+        className={`${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 w-64 border-r border-border p-6 fixed md:static top-0 left-0 h-full bg-background z-40`}
+      >
+        <h2 className="font-semibold text-lg mb-4">Legal Documents</h2>
 
         <nav className="space-y-3">
           <button
@@ -29,134 +54,197 @@ export default function Legal() {
           >
             Privacy Policy
           </button>
+
+          <button
+            onClick={() => scrollTo(cookiesRef)}
+            className="block w-full text-left px-3 py-2 rounded hover:bg-accent transition"
+          >
+            Cookie Policy
+          </button>
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 space-y-32">
-        {/* Terms of Service */}
+      <main className="flex-1 p-8 mt-4 md:mt-0 space-y-32 md:ml-64">
+        {/* TOS */}
         <section ref={tosRef} id="tos">
           <h1 className="text-3xl font-bold mb-4">Terms of Service</h1>
-          <p className="text-muted-foreground mb-4">
-            Last Updated: [Insert Date]
-          </p>
+          <p className="text-muted-foreground mb-4">Last Updated: {}</p>
 
           <div className="space-y-4 leading-relaxed">
             <p>
-              Welcome to OneQ. By accessing or using the Service, you agree to
-              these Terms. If you do not agree, do not use the Service.
+              These Terms of Service ("Terms") govern your use of OneQ ("the
+              Service"), operated by {} ("we", "us", or "our"). By accessing or
+              using the Service, you agree to be bound by these Terms.
             </p>
 
             <h2 className="text-xl font-semibold">1. Overview</h2>
             <p>
               OneQ provides tools for creating one-question surveys, collecting
-              responses, and generating AI summaries.
+              responses, generating AI insights, and analyzing results.
             </p>
 
-            <h2 className="text-xl font-semibold">2. Accounts</h2>
+            <h2 className="text-xl font-semibold">2. Eligibility & Accounts</h2>
             <p>
-              Accounts are authenticated through Clerk. You are responsible for
-              securing your login.
+              You must be at least 13 years old. Accounts are authenticated
+              through Clerk. You are responsible for maintaining the security of
+              your credentials.
             </p>
 
             <h2 className="text-xl font-semibold">3. Subscriptions & Billing</h2>
             <p>
-              Stripe processes all subscription payments. Subscriptions renew
-              automatically unless cancelled.
+              Paid plans are billed through Stripe. Subscriptions renew
+              automatically unless canceled. Plan details and pricing are
+              available at {"/pricing"}.
             </p>
 
             <h2 className="text-xl font-semibold">4. Token Credits</h2>
             <p>
-              Certain plans include token credits for AI summaries. Credits have
-              no cash value and may not roll over.
+              Certain plans include token credits used for AI summaries. Credits
+              have no cash value, may not roll over, and are non-refundable.
             </p>
 
-            <h2 className="text-xl font-semibold">5. User Content</h2>
+            <h2 className="text-xl font-semibold">5. User Content Rights</h2>
             <p>
-              You retain ownership of all content. We only process it to provide
-              the Service.
+              You retain full ownership of all survey content. You grant us a
+              license to process it solely for the purpose of providing the
+              Service.
             </p>
 
             <h2 className="text-xl font-semibold">6. Acceptable Use</h2>
             <p>
-              You may not use OneQ for spam, prohibited data collection, or
-              illegal activity.
+              You may not use the Service to:  
+              • Send spam  
+              • Collect prohibited personal data  
+              • Engage in unlawful or abusive behavior  
             </p>
 
-            <h2 className="text-xl font-semibold">7. Service Availability</h2>
+            <h2 className="text-xl font-semibold">7. Service Modifications</h2>
             <p>
-              We may update, modify, or discontinue features without liability.
+              We may update or discontinue features at any time. We are not
+              liable for changes or downtime.
             </p>
 
             <h2 className="text-xl font-semibold">8. Termination</h2>
             <p>
-              Accounts may be suspended for violations or payment failures.
+              We may suspend or terminate accounts due to violations,
+              non-payment, or fraudulent activity.
             </p>
 
-            <h2 className="text-xl font-semibold">9. Disclaimers</h2>
-            <p>The service is provided “as is” without warranties.</p>
+            <h2 className="text-xl font-semibold">9. Disclaimer of Warranties</h2>
+            <p>The Service is provided "as is" without warranties of any kind.</p>
 
             <h2 className="text-xl font-semibold">10. Limitation of Liability</h2>
             <p>
-              Our liability is limited to the amount paid in the last 12 months.
+              To the fullest extent permitted by law, our liability is limited
+              to the amount paid for the Service in the preceding 12 months.
             </p>
           </div>
         </section>
 
-        {/* Privacy Policy */}
+        {/* PRIVACY */}
         <section ref={privacyRef} id="privacy">
           <h1 className="text-3xl font-bold mb-4">Privacy Policy</h1>
-          <p className="text-muted-foreground mb-4">
-            Last Updated: [Insert Date]
-          </p>
+          <p className="text-muted-foreground mb-4">Last Updated: {}</p>
 
           <div className="space-y-4 leading-relaxed">
             <p>
-              This Privacy Policy explains how OneQ collects, stores, and uses
-              information.
+              This Privacy Policy explains how we collect, use, store, and
+              protect your information when you use OneQ.
             </p>
 
             <h2 className="text-xl font-semibold">1. Information We Collect</h2>
             <p>
-              We collect account information (via Clerk), survey data, and usage
-              analytics.
+              • Account information via Clerk  
+              • Survey data and responses  
+              • Payment data via Stripe  
+              • Usage analytics and device information  
             </p>
 
             <h2 className="text-xl font-semibold">2. How We Use Information</h2>
             <p>
-              We use data to provide survey services, generate AI summaries, and
-              improve the platform.
+              • To deliver and improve the Service  
+              • To generate AI summaries  
+              • For analytics and performance monitoring  
+              • To manage subscriptions and payments  
             </p>
 
-            <h2 className="text-xl font-semibold">3. Sharing of Data</h2>
+            <h2 className="text-xl font-semibold">3. How Data Is Shared</h2>
             <p>
-              We only share data with essential providers such as Supabase,
-              Stripe, Clerk, and AI APIs.
+              Data is shared only with essential processors:  
+              Clerk (authentication), Stripe (billing),
+              Supabase (database), and {} for AI processing.
             </p>
 
-            <h2 className="text-xl font-semibold">4. Cookies</h2>
+            <h2 className="text-xl font-semibold">4. Data Retention</h2>
             <p>
-              Authentication and usage cookies may be used to improve the
-              experience.
+              We retain information for as long as your account is active or as
+              needed to provide the Service.
             </p>
 
             <h2 className="text-xl font-semibold">5. Data Security</h2>
             <p>
-              We use industry-standard security practices but cannot guarantee
-              complete protection.
+              We use industry-standard encryption and security practices, but no
+              system is 100% secure.
             </p>
 
-            <h2 className="text-xl font-semibold">6. Your Rights</h2>
+            <h2 className="text-xl font-semibold">6. Rights & Choices</h2>
             <p>
-              You may request to delete your data by contacting us or closing
-              your account.
+              You may request deletion of your account or data by emailing {} or
+              using account controls.
             </p>
 
             <h2 className="text-xl font-semibold">7. Contact</h2>
-            <p>Email: [your-email]</p>
+            <p>Email: {}</p>
+          </div>
+        </section>
+
+        {/* COOKIES */}
+        <section ref={cookiesRef} id="cookies">
+          <h1 className="text-3xl font-bold mb-4">Cookie Policy</h1>
+          <p className="text-muted-foreground mb-4">Last Updated: {}</p>
+
+          <div className="space-y-4 leading-relaxed">
+            <p>
+              This Cookie Policy explains how OneQ uses cookies and similar
+              technologies.
+            </p>
+
+            <h2 className="text-xl font-semibold">1. What Cookies We Use</h2>
+            <p>
+              We use:  
+              • Authentication cookies (Clerk)  
+              • Session cookies  
+              • Analytics cookies  
+              • Preference cookies  
+            </p>
+
+            <h2 className="text-xl font-semibold">2. Why We Use Cookies</h2>
+            <p>
+              • To keep users logged in  
+              • To improve performance  
+              • To analyze usage  
+              • To remember preferences  
+            </p>
+
+            <h2 className="text-xl font-semibold">3. Managing Cookies</h2>
+            <p>
+              You can disable cookies in your browser settings. The Service may
+              not function properly without required cookies.
+            </p>
           </div>
         </section>
       </main>
+
+      {/* Back to Top */}
+      {showTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 bg-blue-500 hover:bg-blue-400 text-white px-4 py-3 rounded-full shadow-lg flex items-center gap-2"
+        >
+          Back to Top <ChevronUp className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 }

@@ -57,7 +57,7 @@ if (error) console.error('Supabase error:', error);
 			balance: newBalance,
 		});
         if (error) {
-            console.error('Failed to credit tokens:', updateError);
+            console.error('Failed to credit tokens:', error);
           } else {
             console.log(`Credited ${tokenCredits} tokens to user ${clerkId}`);
           }

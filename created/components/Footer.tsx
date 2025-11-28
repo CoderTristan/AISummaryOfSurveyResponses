@@ -23,21 +23,21 @@ export default function Footer() {
           <Link href="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
             Pricing
           </Link>
-          <Link href="/overview" className="text-muted-foreground hover:text-primary transition-colors">
-            How It Works
+          <Link href="/features" className="text-muted-foreground hover:text-primary transition-colors">
+            Features
           </Link>
         </div>
 
         {/* Legal Links */}
         <div className="flex flex-col gap-2">
           <h3 className="font-semibold text-lg text-blue-500">Legal</h3>
-          <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/legal" className="text-muted-foreground hover:text-primary transition-colors">
             Terms of Service
           </Link>
-          <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/legal" className="text-muted-foreground hover:text-primary transition-colors">
             Privacy Policy
           </Link>
-          <Link href="/cookies" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/legal" className="text-muted-foreground hover:text-primary transition-colors">
             Cookie Policy
           </Link>
         </div>
