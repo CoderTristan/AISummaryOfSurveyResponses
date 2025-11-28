@@ -11,7 +11,7 @@ export default function Home() {
         <div className="container mx-auto relative z-10">
           <div className="max-w-3xl animate-fade-in-up">
             <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Get <span className="text-blue-500">Instant Feedback</span> with One-Question Surveys
+              Get <span className="text-blue-500">Instant Feedback</span> with OneQ Surveys
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
               Quickly gather insights from your audience with simple surveys that take seconds to complete.
@@ -37,7 +37,7 @@ export default function Home() {
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Why Choose One-Question Surveys?</h2>
+            <h2 className="text-4xl font-bold mb-4">Why Choose OneQ Surveys?</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Simplified survey experience that helps you understand your audience instantly.
             </p>

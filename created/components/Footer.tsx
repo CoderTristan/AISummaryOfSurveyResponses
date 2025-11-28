@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Site Info */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold text-blue-500">One-Question Surveys</h2>
+          <h2 className="text-xl font-bold text-blue-500">OneQ Surveys</h2>
           <p className="text-muted-foreground text-sm">
             Simple, fast, and effective surveys to gather insights from your audience.
           </p>
@@ -17,17 +17,14 @@ export default function Footer() {
         {/* Site Links */}
         <div className="flex flex-col gap-2">
           <h3 className="font-semibold text-lg text-blue-500">Quick Links</h3>
-          <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
-            Dashboard
-          </Link>
-          <Link href="/overview" className="text-muted-foreground hover:text-primary transition-colors">
-            How It Works
+          <Link href="/sign-up" className="text-muted-foreground hover:text-primary transition-colors">
+            Sign-Up/Sign-In
           </Link>
           <Link href="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
             Pricing
           </Link>
-          <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors">
-            FAQ
+          <Link href="/overview" className="text-muted-foreground hover:text-primary transition-colors">
+            How It Works
           </Link>
         </div>
 
@@ -48,7 +45,7 @@ export default function Footer() {
 
       {/* Bottom Text */}
       <div className="mt-10 text-center text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} One-Question Surveys. All rights reserved.
+        &copy; {new Date().getFullYear()} OneQ Surveys. All rights reserved.
       </div>
     </footer>
   );

@@ -84,9 +84,10 @@ export default function Response({ projectId }: ResponsesPageProps) {
   }
 
   function estimateTokensForText(text: string) {
-    if (!text) return 0;
-    return Math.max(1, Math.ceil(text.length / 4));
-  }
+  if (!text) return 0;
+  const words = text.trim().split(/\s+/).length;
+  return Math.max(1, Math.ceil(words * 1.5)); // same as back-end
+}
 
   function estimateCostForTokens(tokens: number) {
     return (tokens / 1000) * costPer1k;
@@ -256,10 +257,10 @@ export default function Response({ projectId }: ResponsesPageProps) {
         const visibleResponses = showAll ? sortedList : sortedList.slice(0, 10);
 
         const joinedAnswers = (list || []).map((r) => String(r.answer || "")).join("\n");
-        const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
-        const promptTokens = estimateTokensForText(promptEstimate);
-        const expectedCompletionTokens = 350;
+        const promptTokens = estimateTokensForText(`${survey.question}\n\n${joinedAnswers}`);
+        const expectedCompletionTokens = 350; // keep same as back-end
         const totalEstimate = promptTokens + expectedCompletionTokens;
+        const estCost = estimateCostForTokens(totalEstimate);
 
         return (
           <Card key={survey.id} className="shadow-sm border">

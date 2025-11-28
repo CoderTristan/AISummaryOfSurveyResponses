@@ -55,9 +55,7 @@ export async function POST(
 
   if (!responses || responses.length === 0) {
     return NextResponse.json(
-      {
-        error: "This survey has no responses — cannot generate a summary.",
-      },
+      { error: "This survey has no responses — cannot generate a summary." },
       { status: 400 }
     );
   }
@@ -85,7 +83,7 @@ Responses:
 ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 `;
 
-  // --- Estimated token billing (unchanged) ---
+  // --- Estimated token billing (kept for initial check) ---
   const promptTokens = estimateTokensForText(prompt);
   const expectedCompletionTokens = 350;
   const totalEstimatedTokens = promptTokens + expectedCompletionTokens;
@@ -105,25 +103,11 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
     );
   }
 
-  // Check balance
+  // Check balance (still using estimated cost for safety)
   if (user.balance < estimatedCost) {
     return NextResponse.json(
       { error: "Insufficient tokens for AI generation" },
       { status: 400 }
-    );
-  }
-
-  // Deduct immediately (same behavior as before)
-  const { error: deductError } = await supabaseAdmin
-    .from("users")
-    .update({ balance: user.balance - estimatedCost })
-    .eq("id", user.id);
-
-  if (deductError) {
-    console.error("Failed to deduct tokens:", deductError);
-    return NextResponse.json(
-      { error: "Failed to deduct tokens" },
-      { status: 500 }
     );
   }
 
@@ -156,51 +140,39 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
     // --- REAL TOKEN USAGE ---
     const realPromptTokens = data?.usageMetadata?.promptTokenCount ?? null;
-    const realCompletionTokens =
-      data?.usageMetadata?.candidatesTokenCount ?? null;
+    const realCompletionTokens = data?.usageMetadata?.candidatesTokenCount ?? null;
     const realTotalTokens =
       realPromptTokens && realCompletionTokens
         ? realPromptTokens + realCompletionTokens
-        : null;
+        : totalEstimatedTokens;
 
-    const realCost =
-      realTotalTokens !== null
-        ? (realTotalTokens / 1000) * AI_COST_PER_1K
-        : estimatedCost;
+    const realCost = (realTotalTokens / 1000) * AI_COST_PER_1K;
 
-    // Convert Gemini's returned dollar cost → approximate token count
-// Example: 0.000081 → 81 tokens
-    let realTokenApprox = null;
-    if (realCost != null) {
-      realTokenApprox = Math.round(realCost * 100_000_000);
+    // Deduct real token cost
+    const { error: deductError } = await supabaseAdmin
+      .from("users")
+      .update({ balance: user.balance - realCost })
+      .eq("id", user.id);
+
+    if (deductError) {
+      console.error("Failed to deduct tokens:", deductError);
+      return NextResponse.json(
+        { error: "Failed to deduct tokens" },
+        { status: 500 }
+      );
     }
 
-
-    // ===============================================================
-    // ⭐ IMPROVED JSON EXTRACTION (the ONLY part changed)
-    // ===============================================================
+    // Parse response
     const raw =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-      data?.choices?.[0]?.text ??
-      "";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ?? data?.choices?.[0]?.text ?? "";
 
-    let parsed: { summary?: string; sentiment?: number; actions?: string[] } =
-      {};
+    let parsed: { summary?: string; sentiment?: number; actions?: string[] } = {};
 
     try {
-      // remove code fences if present
-      let cleaned = raw
-        .replace(/```json/gi, "")
-        .replace(/```/g, "")
-        .trim();
-
-      // extract the first { ... }
+      let cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
       const first = cleaned.indexOf("{");
       const last = cleaned.lastIndexOf("}");
-      if (first !== -1 && last !== -1) {
-        cleaned = cleaned.slice(first, last + 1);
-      }
-
+      if (first !== -1 && last !== -1) cleaned = cleaned.slice(first, last + 1);
       parsed = JSON.parse(cleaned);
     } catch {
       parsed.summary = String(raw).slice(0, 2000);
@@ -208,13 +180,11 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
       parsed.actions = [];
     }
 
-    // Guarantee required fields exist
     const finalSummary = parsed.summary ?? "";
     const finalSentiment =
       typeof parsed.sentiment === "number" ? parsed.sentiment : 0;
     const finalActions = Array.isArray(parsed.actions) ? parsed.actions : [];
 
-    // Save to DB
     const { error: updateError } = await supabase
       .from("surveys")
       .update({
@@ -226,36 +196,22 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 
     if (updateError) {
       console.error("Failed to update surveys.ai_summary:", updateError);
-      return NextResponse.json({
-        success: true,
-        warning: "Generated but failed to save summary",
-        generated: {
-          summary: finalSummary,
-          sentiment: finalSentiment,
-          actions: finalActions,
-        },
-        estimate: {
-          tokens: realTotalTokens ?? totalEstimatedTokens,
-          cost: realCost,
-        },
-      });
     }
 
     return NextResponse.json({
-  success: true,
-  generated: {
-    summary: finalSummary,
-    sentiment: finalSentiment,
-    actions: finalActions,
-  },
-  estimate: {
-    tokens: realTotalTokens ?? totalEstimatedTokens,
-    cost: realCost,
-    usedPrompt: realPromptTokens,
-    usedCompletion: realCompletionTokens,
-  },
-});
-
+      success: true,
+      generated: {
+        summary: finalSummary,
+        sentiment: finalSentiment,
+        actions: finalActions,
+      },
+      estimate: {
+        tokens: realTotalTokens,
+        cost: realCost,
+        usedPrompt: realPromptTokens,
+        usedCompletion: realCompletionTokens,
+      },
+    });
   } catch (err) {
     console.error("Error generating summary:", err);
     return NextResponse.json({ error: "Generation failed" }, { status: 500 });
