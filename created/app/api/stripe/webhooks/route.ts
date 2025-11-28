@@ -51,7 +51,7 @@ if (error) console.error('Supabase error:', error);
   if (plan?.name) {
       const tokenCredits = PLAN_TOKEN_CREDITS[plan.name.toLowerCase()] ?? 0;
 	  const bal = await getBalance()
-	  const newBalance = tokenCredits - bal
+	  const newBalance = bal.balance + tokenCredits
       if (tokenCredits > 0) {
         const { error } = await supabaseAdmin.from('users').update({
 			balance: newBalance,
