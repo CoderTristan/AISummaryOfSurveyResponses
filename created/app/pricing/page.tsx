@@ -1,17 +1,17 @@
 import { CheckoutButton } from '@/components/CheckoutButton';
 import { PLANS } from '@/lib/plans';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export default async function PricingPage() {
-  const user = await currentUser();
+  const {userId} = await auth();
   let currentPlanSlug: string | null = null;
 
-  if (user) {
+  if (userId) {
     const { data, error } = await supabaseAdmin
       .from('subscriptions')
       .select('plan_name, status')
-      .eq('clerk_id', user.id)
+      .eq('clerk_id', userId)
       .eq('status', 'active')
       .single();
 
@@ -58,7 +58,7 @@ export default async function PricingPage() {
 
               <CheckoutButton
                 priceId={plan.stripePriceId!}
-                isLoggedIn={!!user}
+                isLoggedIn={!!userId}
                 planName={plan.name}
                 disabledButton={isCurrent}
               />

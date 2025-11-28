@@ -172,7 +172,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
 // Example: 0.000081 → 81 tokens
     let realTokenApprox = null;
     if (realCost != null) {
-      realTokenApprox = Math.round(realCost * 1_000_000);
+      realTokenApprox = Math.round(realCost * 100_000_000);
     }
 
 

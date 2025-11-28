@@ -42,6 +42,7 @@ export async function POST(req: Request) {
 	if (eventType === 'user.created') {
 		const { id, email_addresses, first_name, last_name } = evt.data;
 		const email = email_addresses[0]?.email_address;
+		const balance = 100
 		if (!email) return NextResponse.json({ error: 'No email address found' }, { status: 400 });
 
 		const { error } = await supabaseAdmin.from('users').insert({
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
 			email: email,
 			first_name,
 			last_name,
+			balance: balance,
 		});
 		if (error) {
 			console.error('Error inserting new user to Supabase:', error);

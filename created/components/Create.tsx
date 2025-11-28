@@ -390,6 +390,16 @@ const handleSubmit = async () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-semibold text-gray-900">Create Survey</h1>
+            {surveys.length >= maxSurveys && (
+  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <p className="text-sm text-blue-700">
+      You’ve reached your survey limit for the <strong>{plan}</strong> plan.
+    </p>
+    <Link href="/pricing" className="text-blue-600 underline text-sm font-medium">
+      Upgrade to unlock more surveys →
+    </Link>
+  </div>
+)}
             <Button
   onClick={() => {
     if (surveys.length >= maxSurveys) {
@@ -406,16 +416,7 @@ const handleSubmit = async () => {
               <Plus size={16} />
               Create new
             </Button>
-            {surveys.length >= maxSurveys && (
-  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-    <p className="text-sm text-blue-700">
-      You’ve reached your survey limit for the <strong>{plan}</strong> plan.
-    </p>
-    <Link href="/pricing" className="text-blue-600 underline text-sm font-medium">
-      Upgrade to unlock more surveys →
-    </Link>
-  </div>
-)}
+            
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
