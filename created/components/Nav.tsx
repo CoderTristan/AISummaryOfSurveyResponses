@@ -23,7 +23,7 @@ export default function Header() {
         className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent"
       >
         <img
-    src="/public/favicon-32x32.png"
+    src="/favicon-32x32.png"
     alt="OneQ logo"
     className="w-6 h-6"
   />
