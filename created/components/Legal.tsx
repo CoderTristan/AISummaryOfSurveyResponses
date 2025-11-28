@@ -248,21 +248,6 @@ export default function Legal() {
           Back to Top <ChevronUp className="w-5 h-5" />
         </button>
       )}
-
-      {/* Cookie Banner */}
-      {showCookieBanner && (
-        <div className="fixed bottom-0 left-0 w-full bg-gray-900 text-white p-4 flex flex-col md:flex-row justify-between items-center gap-2 z-50">
-          <p className="text-sm md:text-base">
-            We use cookies to enhance your experience. By continuing, you consent to our cookie use.
-          </p>
-          <button
-            onClick={acceptCookies}
-            className="bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded"
-          >
-            Accept
-          </button>
-        </div>
-      )}
     </div>
   );
 }
