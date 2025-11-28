@@ -27,7 +27,6 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
         if (data.type === "multiple" && data.options && typeof data.options === "string") {
           data.options = data.options.replace(/^{|}$/g, "").split(",");
         }
-        console.log(data + data.type + data.options + data.color)
 
         setSurvey(data);
       } catch (err) {
@@ -79,7 +78,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
   if (!survey)
     return <div className="flex items-center justify-center h-screen text-gray-600">Survey not found</div>;
 
-  const theme = survey.color || "#6366f1"; // fallback indigo
+  const theme = survey.color || "#6366f1";
 
   if (submitted)
     return (
