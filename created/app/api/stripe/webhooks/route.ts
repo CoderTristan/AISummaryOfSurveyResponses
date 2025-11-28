@@ -63,7 +63,11 @@ if (error) console.error('Supabase error:', error);
         if (error) {
             console.error('Failed to credit tokens:', error);
           } else {
-            console.log(`Credited ${tokenCredits} tokens to user ${clerkId}`);
+			const data = await supabaseAdmin
+			.from('users')
+			.select('*')
+			.eq("clerk_id", clerkId)
+            console.log(`Credited ${tokenCredits} tokens to user ${clerkId}` + data);
           }
       }
     }
