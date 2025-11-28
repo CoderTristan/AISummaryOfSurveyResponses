@@ -165,8 +165,6 @@ export default function Overview({ projectId }: OverviewProps) {
       setTextResponses({});
       setStatsDialogOpen(false);
       setSelectedSurvey(null);
-
-      alert("All surveys and responses have been deleted.");
     } catch (err) {
       console.error("Failed to delete everything:", err);
       alert("Failed to delete all surveys. See console for details.");

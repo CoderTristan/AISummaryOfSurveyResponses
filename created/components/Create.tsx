@@ -608,29 +608,40 @@ const handleSubmit = async () => {
   </TabsContent>
 
   <TabsContent value="link" className="space-y-2">
-    {activeTab === "link" ? (
-      <iframe src={previewLink} style={{ width: "100%", height: 360, border: "none" }} />
-    ) : (
-      <div className="flex gap-2">
-        <Input readOnly value={previewLink} className="font-mono text-xs" />
-        <Button variant="outline" size="icon" onClick={() => doCopy(previewLink, "link")}>
-          {copiedField === "link" ? <Check size={16} /> : <Copy size={16} />}
-        </Button>
-      </div>
-    )}
-  </TabsContent>
+  <div className="flex gap-2">
+    <Input
+      readOnly
+      value={previewLink}
+      className="font-mono text-xs"
+    />
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => doCopy(previewLink, "link")}
+    >
+      {copiedField === "link" ? <Check size={16} /> : <Copy size={16} />}
+    </Button>
+  </div>
+</TabsContent>
 
-  <TabsContent value="iframe" className="space-y-2">
-    {activeTab === "iframe" && surveyId && (
-      <iframe src={previewLink} style={{ width: "100%", height: 360, border: "none" }} />
-    )}
-    <div className="flex gap-2">
-      <Textarea readOnly rows={2} value={iframeEmbed} className="font-mono text-xs" />
-      <Button variant="outline" size="icon" onClick={() => doCopy(iframeEmbed, "iframe")}>
-        {copiedField === "iframe" ? <Check size={16} /> : <Copy size={16} />}
-      </Button>
-    </div>
-  </TabsContent>
+<TabsContent value="iframe" className="space-y-2">
+  <div className="flex gap-2">
+    <Textarea
+      readOnly
+      rows={2}
+      value={iframeEmbed}
+      className="font-mono text-xs"
+    />
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => doCopy(iframeEmbed, "iframe")}
+    >
+      {copiedField === "iframe" ? <Check size={16} /> : <Copy size={16} />}
+    </Button>
+  </div>
+</TabsContent>
+
 
   <TabsContent value="script" className="space-y-2">
     <div className="flex gap-2">

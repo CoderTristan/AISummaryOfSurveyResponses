@@ -13,7 +13,7 @@ export default function Features() {
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           OneQ lets you create simple, one-question surveys that deliver instant,
-          easy-to-understand insights. No confusing forms — just quick answers.
+          feedback and insights. No confusing forms, just quick answers.
         </p>
       </section>
 
@@ -22,7 +22,7 @@ export default function Features() {
         <div className="container mx-auto text-center mb-14">
           <h2 className="text-4xl font-bold mb-4">How It Works</h2>
           <p className="text-gray-600 text-lg max-w-xl mx-auto">
-            Create a question, share the link, and watch responses appear in your dashboard instantly.
+            Create a question, share the link or embed the code, and watch responses appear in your dashboard instantly.
           </p>
         </div>
 
@@ -36,12 +36,12 @@ export default function Features() {
             {
               icon: Timer,
               title: "Share Instantly",
-              description: "Send the link anywhere — email, socials, or embed it.",
+              description: "Send the link to email, socials, or embed it.",
             },
             {
               icon: BarChart3,
               title: "See Results Live",
-              description: "Watch responses update live in a clean dashboard.",
+              description: "Watch responses update live in a clean dashboard and check out the ai summaries and recommended actions.",
             },
           ].map((step, idx) => (
             <Card key={idx} className="p-8 text-center hover:shadow-lg transition">
@@ -60,17 +60,16 @@ export default function Features() {
         <div className="container mx-auto text-center mb-14">
           <h2 className="text-4xl font-bold mb-4">Why People Use OneQ</h2>
           <p className="text-gray-600 text-lg max-w-xl mx-auto">
-            OneQ is built for creators, teams, and businesses that want fast, signal-based feedback.
+            OneQ is built for creators and businesses that want fast feedback on their product or sevice. 
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
-            "Takes seconds to answer — super high completion rates",
+            "Takes seconds to answer; super high completion rates",
             "Perfect for quick decisions or testing ideas",
-            "Clean and friendly design respondents actually like",
+            "Clean and friendly design that looks natural on any platform",
             "Instant analytics with no setup",
-            "Works great on mobile and desktop",
             "Perfect for polls, feedback, product ideas, or micro-surveys",
           ].map((text, i) => (
             <div key={i} className="flex items-start gap-3">
@@ -88,7 +87,7 @@ export default function Features() {
         </h2>
 
         <p className="text-lg text-black max-w-xl mx-auto mb-10">
-          Build your first question, share it, and get real responses instantly.
+          Build your first question, share it, and get responses instantly.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

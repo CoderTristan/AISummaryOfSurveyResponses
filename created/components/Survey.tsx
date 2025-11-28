@@ -27,7 +27,7 @@ export default function PublicSurvey({ surveyId }: PublicSurveyProps) {
         if (data.type === "multiple" && data.options && typeof data.options === "string") {
           data.options = data.options.replace(/^{|}$/g, "").split(",");
         }
-        console.log(data + data.type + data.options)
+        console.log(data + data.type + data.options + data.color)
 
         setSurvey(data);
       } catch (err) {
