@@ -28,6 +28,18 @@ export async function deleteSurveys(projectId: string, surveyId: string) {
   if (error) throw error;
 }
 
+export async function deleteProjectsSurveys(projectId: string) {
+  const { userId } = await auth();
+
+  const { error } = await supabase
+    .from("surveys")
+    .delete()
+    .eq("project_id", projectId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+}
+
 
 
 export async function createSurvey(payload: {

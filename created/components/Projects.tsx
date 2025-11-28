@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { createProject, getUserProjects, deleteProject } from "@/lib/supabaseProjects";
-import { getSurveys } from "@/lib/supabaseSurveys";
-import { getSurveyResponses } from "@/lib/supabaseResponses";
+import { deleteProjectsSurveys, getSurveys } from "@/lib/supabaseSurveys";
+import { deleteAllProjectResponses, getSurveyResponses } from "@/lib/supabaseResponses";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
@@ -143,6 +143,8 @@ const maxProjects = PLAN_LIMITS[plan.toLowerCase()]?.projects ?? 1;
   const handleDelete = async (projectId: string) => {
     if (!confirm("Are you sure you want to delete this project?")) return;
     try {
+      await deleteAllProjectResponses(projectId)
+      await deleteProjectsSurveys(projectId)
       await deleteProject(projectId);
       await fetchProjects();
     } catch (error) {
