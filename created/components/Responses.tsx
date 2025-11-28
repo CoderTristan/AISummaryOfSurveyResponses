@@ -127,68 +127,65 @@ export default function Response({ projectId }: ResponsesPageProps) {
   }
 
   async function generateSummary(surveyId: string, suppressAlert = false) {
-    const survey = surveys.find((s) => s.id === surveyId);
-    if (!survey) return false;
+  const survey = surveys.find((s) => s.id === surveyId);
+  if (!survey) return false;
 
-    const list = responses[surveyId] || [];
-    const joinedAnswers = list.map((r) => String(r.answer || "")).join("\n");
-    const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
-    const promptTokens = estimateTokensForText(promptEstimate);
-    const expectedCompletionTokens = 350;
-    const totalEstimate = promptTokens + expectedCompletionTokens;
-    const estCost = estimateCostForTokens(totalEstimate);
+  const list = responses[surveyId] || [];
+  const joinedAnswers = list.map((r) => String(r.answer || "")).join("\n");
+  const promptEstimate = `${survey.question}\n\n${joinedAnswers}`;
+  const promptTokens = estimateTokensForText(promptEstimate);
+  const expectedCompletionTokens = 350;
+  const totalEstimate = promptTokens + expectedCompletionTokens;
+  const estCost = estimateCostForTokens(totalEstimate);
 
-    if (balance === null || balance < estCost) {
-      if (!suppressAlert) {
-        alert(
-          `Not enough tokens to generate AI summary.\nRequired: ${totalEstimate}, Available: ${balance ?? 0}`
-        );
-      }
-      return false;
+  // Prevent using API if it would put balance below 0
+  if (balance === null || balance - estCost < 0) {
+    if (!suppressAlert) {
+      alert(
+        `Not enough tokens to generate AI summary.\nRequired: ${totalEstimate} tokens, Available: ${balance ?? 0}`
+      );
     }
-
-    setGenerating((prev) => new Set(prev).add(surveyId));
-    try {
-      const res = await fetch(`/api/surveys/${surveyId}/ai-summaries`, { method: "POST" });
-      if (!res.ok) {
-        if (!suppressAlert) {
-          const t = await res.text();
-          alert("Generate failed: " + t);
-        }
-        return false;
-      }
-
-      const data = await res.json();
-      if (data?.generated) {
-        const { summary, sentiment, actions } = data.generated;
-        setSurveys((prev) =>
-          prev.map((s) =>
-            s.id === surveyId
-              ? {
-                  ...s,
-                  ai_summary: summary,
-                  ai_sentiment: sentiment,
-                  ai_actions: actions,
-                }
-              : s
-          )
-        );
-      }
-
-      await fetchBalance();
-      return true;
-    } catch (err) {
-      console.error("generate error", err);
-      if (!suppressAlert) alert("Generation failed — see console");
-      return false;
-    } finally {
-      setGenerating((prev) => {
-        const next = new Set(prev);
-        next.delete(surveyId);
-        return next;
-      });
-    }
+    return false;
   }
+
+  setGenerating((prev) => new Set(prev).add(surveyId));
+  try {
+    const res = await fetch(`/api/surveys/${surveyId}/ai-summaries`, { method: "POST" });
+    if (!res.ok) {
+      if (!suppressAlert) {
+        const t = await res.text();
+        alert("Generate failed: " + t);
+      }
+      return false;
+    }
+
+    const data = await res.json();
+    if (data?.generated) {
+      const { summary, sentiment, actions } = data.generated;
+      setSurveys((prev) =>
+        prev.map((s) =>
+          s.id === surveyId
+            ? { ...s, ai_summary: summary, ai_sentiment: sentiment, ai_actions: actions }
+            : s
+        )
+      );
+    }
+
+    await fetchBalance(); // refresh balance after generation
+    return true;
+  } catch (err) {
+    console.error("generate error", err);
+    if (!suppressAlert) alert("Generation failed — see console");
+    return false;
+  } finally {
+    setGenerating((prev) => {
+      const next = new Set(prev);
+      next.delete(surveyId);
+      return next;
+    });
+  }
+}
+
 
   async function generateAll() {
     if (!confirm("Generate AI summaries for ALL surveys? This will consume tokens.")) return;

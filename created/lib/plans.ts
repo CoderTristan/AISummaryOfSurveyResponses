@@ -10,14 +10,14 @@ stripePriceId: null,
 name: 'Pro',
 slug: 'pro',
 price: { monthly: 12 },
-features: ['All Free Tier Features', '10 Projects', '10 Surveys', '1,000 Responses/Month', "Email Summaries", '500 AI Generation Tokens'],
+features: ['All Free Tier Features', '10 Projects', '10 Surveys', '1,000 Responses/Month', "Email Summaries", '10,000 AI Generation Tokens'],
 stripePriceId: 'price_1SXkDUQybpDxd0p1uIaLwl7d',
 },
 {
 name: 'Premium',
 slug: 'premium',
 price: { monthly: 29 },
-features: ['All Pro Tier Features', '100 Projects', '100 Surveys', '10,000 Responses/Month', '2,500 AI Generation Tokens'],
+features: ['All Pro Tier Features', '100 Projects', '100 Surveys', '10,000 Responses/Month', '100,000 AI Generation Tokens'],
 stripePriceId: 'price_1SXkCqQybpDxd0p1uCkJLpUn',
 },
 ] as const;
@@ -30,8 +30,8 @@ premium: { projects:100, surveys: 100, responses:10000 },
 };
 
 export const PLAN_TOKEN_CREDITS: Record<string, number> = {
-  pro: 500,
-  premium: 2500,
+  pro: 10000,
+  premium: 100000,
 };
 
 export const PLANS_RANKED = [
