@@ -50,8 +50,13 @@ export async function POST(req: Request) {
 if (error) console.error('Supabase error:', error);
   if (plan?.name) {
       const tokenCredits = PLAN_TOKEN_CREDITS[plan.name.toLowerCase()] ?? 0;
-	  const data = await getBalance()
-	  const newBalance = data?.balance + tokenCredits
+	  const { data: user, error } = await supabaseAdmin
+    .from("users")
+    .select("id, balance")
+    .eq("clerk_id", clerkId)
+    .single();
+	if (error) throw error
+	  const newBalance = user?.balance + tokenCredits
       if (tokenCredits > 0) {
         const { error } = await supabaseAdmin
 		.from('users')
