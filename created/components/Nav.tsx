@@ -22,6 +22,11 @@ export default function Header() {
         href="/"
         className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent"
       >
+        <img
+    src="/public/favicon.ico"
+    alt="OneQ logo"
+    className="w-6 h-6"
+  />
         OneQ
       </Link>
       <nav className="hidden md:flex space-x-2 ml-auto text-sm text-gray-600">

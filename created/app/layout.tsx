@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "One Question Surveys",
-  description: "Create one question surveys fast and simple. One Question solves the issue of bloated forms tool. It is organized into a clean dashboard with survey previews, custom templates, daily/weekly email summaries, and AI response summaries for maximum efficiency feedback gathering.",
+  title: "OneQ",
+  description: "Create one question surveys fast and simple. OneQ solves the issue of bloated forms tool. It is organized into a clean dashboard with survey previews, custom templates, daily/weekly email summaries, and AI response summaries for maximum efficiency feedback gathering.",
 };
 
 export default function RootLayout({
