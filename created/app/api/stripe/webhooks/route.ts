@@ -72,9 +72,9 @@ export async function POST(req: Request) {
         PLAN_TOKEN_CREDITS[plan.name.toLowerCase()] ?? 0;
 
       if (tokenCredits > 0) {
-        const { data: user } = await getBalance()
+        const { data } = await getBalance()
 
-        const newBalance = (user?.balance ?? 0) + tokenCredits;
+        const newBalance = (data ?? 0) + tokenCredits;
 
         const { error: updateError } = await supabaseAdmin
           .from("users")
