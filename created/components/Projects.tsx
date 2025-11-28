@@ -223,39 +223,47 @@ const maxProjects = PLAN_LIMITS[plan.toLowerCase()]?.projects ?? 1;
         )}
 
         {projects.map((project) => (
-          <Link
-            key={project.id}
-            href={`/dashboard/${project.id}/create`}
-            className="p-6 border rounded-lg hover:shadow-lg transition cursor-pointer flex justify-between items-center"
-          >
-            <span>{project.name}</span>
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMenuOpen(menuOpen === project.id ? null : project.id);
-                }}
-              >
-                <MoreHorizontal size={18} />
-              </Button>
+          <div
+  key={project.id}
+  className="p-6 border rounded-lg hover:shadow-lg transition flex justify-between items-center"
+>
+  <Link href={`/dashboard/${project.id}/create`} className="flex-1">
+    {project.name}
+  </Link>
 
-              {menuOpen === project.id && (
-                <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2"
-                    onClick={() => handleDelete(project.id)}
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Link>
+  <div className="relative">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={(e) => {
+        e.stopPropagation(); // SUPER IMPORTANT
+        e.preventDefault();
+        setMenuOpen(menuOpen === project.id ? null : project.id);
+      }}
+    >
+      <MoreHorizontal size={18} />
+    </Button>
+
+    {menuOpen === project.id && (
+      <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            handleDelete(project.id);
+          }}
+        >
+          <Trash2 size={16} />
+          Delete
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
+
         ))}
       </div>
 
