@@ -151,7 +151,7 @@ ${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}
     // Deduct real token cost
     const { error: deductError } = await supabaseAdmin
       .from("users")
-      .update({ balance: user.balance - realCost })
+      .update({ balance: user.balance - realTotalTokens })
       .eq("id", user.id);
 
     if (deductError) {
