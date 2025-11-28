@@ -94,7 +94,7 @@ export default function Features() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/sign-up">
             <Button size="lg" className="bg-blue-500 hover:bg-blue-400 text-white">
-              Create a OneQ
+              Get Started Free
             </Button>
           </Link>
 

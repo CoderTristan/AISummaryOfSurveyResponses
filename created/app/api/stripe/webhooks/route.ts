@@ -53,9 +53,13 @@ if (error) console.error('Supabase error:', error);
 	  const data = await getBalance()
 	  const newBalance = data?.balance + tokenCredits
       if (tokenCredits > 0) {
-        const { error } = await supabaseAdmin.from('users').update({
+        const { error } = await supabaseAdmin
+		.from('users')
+		.update({
 			balance: newBalance,
-		});
+		})
+		.eq("clerk_id", clerkId)
+
         if (error) {
             console.error('Failed to credit tokens:', error);
           } else {
