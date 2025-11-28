@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { PLANS } from '@/lib/plans';
+import { PLAN_TOKEN_CREDITS, PLANS } from '@/lib/plans';
 import { sendPaymentFailedEmail } from '@/lib/email';
+import { getBalance } from '@/lib/userData';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -47,6 +48,21 @@ export async function POST(req: Request) {
         current_period_end: new Date(subscription.current_period_end * 1000),
       });
 if (error) console.error('Supabase error:', error);
+  if (plan?.name) {
+      const tokenCredits = PLAN_TOKEN_CREDITS[plan.name.toLowerCase()] ?? 0;
+	  const bal = await getBalance()
+	  const newBalance = tokenCredits - bal
+      if (tokenCredits > 0) {
+        const { error } = await supabaseAdmin.from('users').update({
+			balance: newBalance,
+		});
+        if (error) {
+            console.error('Failed to credit tokens:', error);
+          } else {
+            console.log(`Credited ${tokenCredits} tokens to user ${clerkId}`);
+          }
+      }
+    }
   }
   break;
 }

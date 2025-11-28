@@ -55,13 +55,13 @@ export default async function PricingPage() {
                   ))}
                 </ul>
               </div>
-
+              {plan.name.toLowerCase() !== 'free' &&
               <CheckoutButton
                 priceId={plan.stripePriceId!}
                 isLoggedIn={!!userId}
                 planName={plan.name}
                 disabledButton={isCurrent}
-              />
+              />}
             </div>
           );
         })}

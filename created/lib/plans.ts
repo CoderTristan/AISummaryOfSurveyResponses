@@ -28,3 +28,8 @@ free: { projects:1, surveys: 1, responses:100},
 pro: { projects:10, surveys: 10, responses:1000 },
 premium: { projects:100, surveys: 100, responses:10000 },
 };
+
+export const PLAN_TOKEN_CREDITS: Record<string, number> = {
+  pro: 500,
+  premium: 2500,
+};
