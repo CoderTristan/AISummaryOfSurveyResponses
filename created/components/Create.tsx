@@ -47,7 +47,7 @@ export default function CreateSurveyPage() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL
   const subscription = useSubscription();
 const plan = subscription?.plan || "free";
-const maxSurveys = PLAN_LIMITS[plan]?.surveys ?? 3; // whatever limit you defined
+const maxSurveys = PLAN_LIMITS[plan.toLowerCase()]?.surveys ?? 3; // whatever limit you defined
 
 const [surveys, setSurveys] = useState<any[]>([]);
 

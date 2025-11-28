@@ -39,7 +39,7 @@ export default function Projects() {
   const [loadingTotals, setLoadingTotals] = useState(true);
 const subscription = useSubscription();
 const plan = subscription?.plan || "free";
-const maxProjects = PLAN_LIMITS[plan]?.projects ?? 1;
+const maxProjects = PLAN_LIMITS[plan.toLowerCase()]?.projects ?? 1;
 
   const router = useRouter();
 

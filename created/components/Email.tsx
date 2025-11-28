@@ -92,7 +92,7 @@ export default function EmailSettings({ projectId }: EmailSettingsProps) {
   );
 }
 
-if (subscription.plan === "free") {
+if (subscription.plan.toLowerCase() === "free") {
   return (
     <div className="max-w-2xl mx-auto p-8 mt-10 text-center border rounded-xl bg-blue-50 border-blue-200">
       <p className="text-blue-700 mb-4">
