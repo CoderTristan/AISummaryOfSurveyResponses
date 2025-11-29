@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /
+
+Sitemap: https://survey-delta-one.vercel.app/sitemap.xml
