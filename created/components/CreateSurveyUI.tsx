@@ -132,11 +132,36 @@ export default function CreateSurveyUI(props: any) {
               >
                 <div className="aspect-square bg-gray-50 rounded mb-3 flex items-center justify-center overflow-hidden">
                   <div className="scale-75 transform">
-                    {ex.type === "yesno" && <div className="flex gap-1"><div className="w-12 h-8 bg-gray-200 rounded"></div><div className="w-12 h-8 bg-gray-200 rounded"></div></div>}
-                    {ex.type === "multiple" && <div className="space-y-1">{[1,2,3].map(i => <div key={i} className="w-24 h-6 bg-gray-200 rounded"></div>)}</div>}
-                    {ex.type === "rating" && <div className="flex gap-1">{[1,2,3,4,5].map(i => <div key={i} className="w-6 h-6 bg-gray-200 rounded"></div>)}</div>}
-                    {ex.type === "emoji" && <div className="flex gap-1 text-xl">{ex.options.map((e,i)=><span key={i}>{e}</span>)}</div>}
-                    {ex.type === "text" && <div className="w-28 h-8 bg-gray-200 rounded"></div>}
+                    {ex.type === "yesno" && (
+                      <div className="flex gap-1">
+                        <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                        <div className="w-12 h-8 bg-gray-200 rounded"></div>
+                      </div>
+                    )}
+                    {ex.type === "multiple" && (
+                      <div className="space-y-1">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="w-24 h-6 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                    )}
+                    {ex.type === "rating" && (
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <div key={i} className="w-6 h-6 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                    )}
+                    {ex.type === "emoji" && (
+                      <div className="flex gap-1 text-xl">
+                        {ex.options.map((e, i) => (
+                          <span key={i}>{e}</span>
+                        ))}
+                      </div>
+                    )}
+                    {ex.type === "text" && (
+                      <div className="w-28 h-8 bg-gray-200 rounded"></div>
+                    )}
                   </div>
                 </div>
                 <div className="text-xs font-medium text-gray-700 capitalize">
@@ -148,9 +173,15 @@ export default function CreateSurveyUI(props: any) {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[400px,1fr] gap-6">
-          {/* Sidebar */}
+          
+          {/* LEFT — FORM */}
           <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setOpenForm(false)} className="text-gray-600">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpenForm(false)}
+              className="text-gray-600"
+            >
               ← Back
             </Button>
 
@@ -162,12 +193,19 @@ export default function CreateSurveyUI(props: any) {
               <CardContent className="space-y-4">
                 <div>
                   <Label className="text-xs">Question</Label>
-                  <Input value={question} onChange={(e) => setQuestion(e.target.value)} className="mt-1" />
+                  <Input
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    className="mt-1"
+                  />
                 </div>
 
                 <div>
                   <Label className="text-xs">Type</Label>
-                  <Select value={type} onValueChange={(v) => setType(v as any)}>
+                  <Select
+                    value={type}
+                    onValueChange={(v) => setType(v as any)}
+                  >
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
@@ -184,106 +222,127 @@ export default function CreateSurveyUI(props: any) {
                 {type === "multiple" && (
                   <div>
                     <Label className="text-xs">Options (comma separated)</Label>
-                    <Textarea rows={3} value={options} onChange={(e) => setOptions(e.target.value)} className="mt-1" />
+                    <Textarea
+                      rows={3}
+                      value={options}
+                      onChange={(e) => setOptions(e.target.value)}
+                      className="mt-1"
+                    />
                   </div>
                 )}
 
                 <div>
                   <Label className="text-xs">Theme Color</Label>
-                  <input type="color" value={themeColor} onChange={(e) => setThemeColor(e.target.value)} className="w-full h-10 border rounded mt-1" />
+                  <input
+                    type="color"
+                    value={themeColor}
+                    onChange={(e) => setThemeColor(e.target.value)}
+                    className="w-full h-10 border rounded mt-1"
+                  />
                 </div>
 
-                <Button className="w-full mt-2" onClick={handleSubmit} disabled={loading}>
-                  {loading ? "Creating…" : created ? "Created ✓" : "Create Survey"}
+                <Button
+                  className="w-full mt-2"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Creating…"
+                    : created
+                    ? "Created ✓"
+                    : "Create Survey"}
                 </Button>
               </CardContent>
             </Card>
           </div>
 
-          {/* Preview */}
-          <div className="lg:sticky lg:top-6">
-            <div className="space-y-4">
-              <Card className="border-2 shadow-xl">
-                <CardContent className="p-12">
-                  <div className="max-w-xl mx-auto">
-                    {question.trim() ? (
-                      <div dangerouslySetInnerHTML={{ __html: livePreview }} />
-                    ) : (
-                      <div className="text-center text-gray-400 py-12">Enter a question to see preview</div>
-                    )}
-                  </div>
+          {/* RIGHT — PREVIEW + TABS */}
+          <div className="lg:sticky lg:top-6 space-y-4">
+            
+            {/* LIVE PREVIEW */}
+            <Card className="border-2 shadow-xl">
+              <CardContent className="p-12">
+                <div className="max-w-xl mx-auto">
+                  {question.trim() ? (
+                    <div dangerouslySetInnerHTML={{ __html: livePreview }} />
+                  ) : (
+                    <div className="text-center text-gray-400 py-12">
+                      Enter a question to see preview
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* EMBED TABS */}
+            {surveyId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Embed Code</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid grid-cols-5 mb-3">
+                      <TabsTrigger value="widget">Widget</TabsTrigger>
+                      <TabsTrigger value="link">Link</TabsTrigger>
+                      <TabsTrigger value="iframe">iFrame</TabsTrigger>
+                      <TabsTrigger value="script">Script</TabsTrigger>
+                      <TabsTrigger value="react">React</TabsTrigger>
+                    </TabsList>
+
+                    {/* WIDGET */}
+                    <TabsContent value="widget">
+                      <div className="flex gap-2">
+                        <Textarea readOnly rows={4} value={widgetEmbed} className="font-mono text-xs" />
+                        <Button variant="outline" size="icon" onClick={() => doCopy(widgetEmbed, "widget")}>
+                          {copiedField === "widget" ? <Check size={16} /> : <Copy size={16} />}
+                        </Button>
+                      </div>
+                    </TabsContent>
+
+                    {/* LINK */}
+                    <TabsContent value="link">
+                      <div className="flex gap-2">
+                        <Input readOnly value={previewLink} className="font-mono text-xs" />
+                        <Button variant="outline" size="icon" onClick={() => doCopy(previewLink, "link")}>
+                          {copiedField === "link" ? <Check size={16} /> : <Copy size={16} />}
+                        </Button>
+                      </div>
+                    </TabsContent>
+
+                    {/* IFRAME */}
+                    <TabsContent value="iframe">
+                      <div className="flex gap-2">
+                        <Textarea readOnly rows={2} value={iframeEmbed} className="font-mono text-xs" />
+                        <Button variant="outline" size="icon" onClick={() => doCopy(iframeEmbed, "iframe")}>
+                          {copiedField === "iframe" ? <Check size={16} /> : <Copy size={16} />}
+                        </Button>
+                      </div>
+                    </TabsContent>
+
+                    {/* SCRIPT */}
+                    <TabsContent value="script">
+                      <div className="flex gap-2">
+                        <Textarea readOnly rows={4} value={scriptEmbed} className="font-mono text-xs" />
+                        <Button variant="outline" size="icon" onClick={() => doCopy(scriptEmbed, "script")}>
+                          {copiedField === "script" ? <Check size={16} /> : <Copy size={16} />}
+                        </Button>
+                      </div>
+                    </TabsContent>
+
+                    {/* REACT */}
+                    <TabsContent value="react">
+                      <div className="flex gap-2">
+                        <Textarea readOnly rows={12} value={reactComponent} className="font-mono text-xs" />
+                        <Button variant="outline" size="icon" onClick={() => doCopy(reactComponent, "react")}>
+                          {copiedField === "react" ? <Check size={16} /> : <Copy size={16} />}
+                        </Button>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
-
-              {surveyId && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Embed Code</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="grid grid-cols-5 mb-3">
-                        <TabsTrigger value="widget">Widget</TabsTrigger>
-                        <TabsTrigger value="link">Link</TabsTrigger>
-                        <TabsTrigger value="iframe">iFrame</TabsTrigger>
-                        <TabsTrigger value="script">Script</TabsTrigger>
-                        <TabsTrigger value="react">React</TabsTrigger>
-                      </TabsList>
-
-                      {/* WIDGET */}
-                      <TabsContent value="widget">
-                        <div className="flex gap-2">
-                          <Textarea readOnly rows={4} value={widgetEmbed} className="font-mono text-xs" />
-                          <Button variant="outline" size="icon" onClick={() => doCopy(widgetEmbed, "widget")}>
-                            {copiedField === "widget" ? <Check size={16} /> : <Copy size={16} />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-
-                      {/* LINK */}
-                      <TabsContent value="link">
-                        <div className="flex gap-2">
-                          <Input readOnly value={previewLink} className="font-mono text-xs" />
-                          <Button variant="outline" size="icon" onClick={() => doCopy(previewLink, "link")}>
-                            {copiedField === "link" ? <Check size={16} /> : <Copy size={16} />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-
-                      {/* IFRAME */}
-                      <TabsContent value="iframe">
-                        <div className="flex gap-2">
-                          <Textarea readOnly rows={2} value={iframeEmbed} className="font-mono text-xs" />
-                          <Button variant="outline" size="icon" onClick={() => doCopy(iframeEmbed, "iframe")}>
-                            {copiedField === "iframe" ? <Check size={16} /> : <Copy size={16} />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-
-                      {/* SCRIPT */}
-                      <TabsContent value="script">
-                        <div className="flex gap-2">
-                          <Textarea readOnly rows={4} value={scriptEmbed} className="font-mono text-xs" />
-                          <Button variant="outline" size="icon" onClick={() => doCopy(scriptEmbed, "script")}>
-                            {copiedField === "script" ? <Check size={16} /> : <Copy size={16} />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-
-                      {/* REACT */}
-                      <TabsContent value="react">
-                        <div className="flex gap-2">
-                          <Textarea readOnly rows={12} value={reactComponent} className="font-mono text-xs" />
-                          <Button variant="outline" size="icon" onClick={() => doCopy(reactComponent, "react")}>
-                            {copiedField === "react" ? <Check size={16} /> : <Copy size={16} />}
-                          </Button>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            )}
           </div>
         </div>
       )}
