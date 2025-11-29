@@ -18,6 +18,7 @@ export async function GET() {
 
   for (const project of projects) {
     if (!project.notify_enabled) continue;
+    console.log(project.notify_enabled)
 
     const shouldSend = shouldSendEmail(project);
     if (!shouldSend) continue;
@@ -27,16 +28,21 @@ export async function GET() {
       .select("question, responses_count")
       .eq("project_id", project.id);
 
+
     const formatted = surveys?.map((s: any) => ({
       question: s.question,
       currentCount: s.responses_count ?? 0,
     }));
+    console.log(formatted)
+
 
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("email")
       .eq("id", project.user_id)
       .single();
+    console.log(user)
+    
 
     if (!user?.email) continue;
 
