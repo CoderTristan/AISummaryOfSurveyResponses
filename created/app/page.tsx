@@ -40,6 +40,14 @@ export default function Home() {
               All responses are neatly organized in a clean, intuitive dashboard.
             </p>
           </div>
+          <video
+        src="/OneQvid.mp4"
+        controls
+        autoPlay={false}
+        loop={false}
+        muted={false}
+        className="w-full rounded-lg shadow-lg"
+      />
         </div>
       </section>
 

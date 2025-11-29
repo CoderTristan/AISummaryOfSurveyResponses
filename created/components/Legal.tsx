@@ -40,7 +40,7 @@ export default function Legal() {
       <aside
         className={`${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed transition-transform duration-300 w-64 border-r border-border p-6 md:static top-0 left-0 h-full bg-background z-40`}
+        } transition-transform duration-300 w-64 border-r border-border p-6 md:static top-0 left-0 h-full bg-background z-40`}
       >
         <h2 className="font-semibold text-lg mb-4">Legal Documents</h2>
         <nav className="space-y-3">
