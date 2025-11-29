@@ -27,7 +27,7 @@ export async function GET() {
       .from("surveys")
       .select("question, responses_count")
       .eq("project_id", project.id);
-    console.log(surveys.question + surveys.responses_count)
+console.log("Surveys:", surveys);
 
 
     const formatted = surveys?.map((s: any) => ({
