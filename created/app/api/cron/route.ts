@@ -18,7 +18,7 @@ export async function GET() {
 
   for (const project of projects) {
     if (!project.notify_enabled) continue;
-    console.log(project.notify_enabled)
+    console.log(project.id)
 
     const shouldSend = shouldSendEmail(project);
     if (!shouldSend) continue;
