@@ -130,7 +130,7 @@ export default function Legal() {
 
             <h2 className="text-xl font-semibold">11. Governing Law</h2>
             <p>
-              These Terms are governed by the laws of the State of California, USA. Any disputes will be resolved in the courts located in California.
+              These Terms are governed by the laws of the State of Michigan. Any disputes will be resolved in the courts located in Michigan.
             </p>
           </div>
         </section>
@@ -182,7 +182,7 @@ export default function Legal() {
 
             <h2 className="text-xl font-semibold">6. User Rights (EU)</h2>
             <p>
-              EU users have the right to access, correct, erase, or port personal data, restrict processing, and object to data use. To exercise these rights, contact us at <a href="mailto:OneQSurveys@outlook.com" className="text-blue-600 underline">OneQSurveys@outlook.com</a>.
+              EU users have the right to access, correct, erase, or port personal data, restrict processing, and object to data use. To exercise these rights, contact us at <a href="mailto:oneqsurvey@outlook.com" className="text-blue-600 underline">oneqsurvey@outlook.com</a>.
             </p>
 
             <h2 className="text-xl font-semibold">7. Data Security</h2>
@@ -196,7 +196,7 @@ export default function Legal() {
             </p>
 
             <h2 className="text-xl font-semibold">9. Contact</h2>
-            <p>Email: <a href="mailto:OneQSurveys@outlook.com" className="text-blue-600 underline">OneQSurveys@outlook.com</a></p>
+            <p>Email: <a href="mailto:oneqsurvey@outlook.com" className="text-blue-600 underline">oneqsurvey@outlook.com</a></p>
           </div>
         </section>
 

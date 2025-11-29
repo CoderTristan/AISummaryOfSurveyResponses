@@ -222,25 +222,26 @@ export default function Response({ projectId }: ResponsesPageProps) {
 
         <div className="flex items-center gap-3">
           <div className="text-sm text-gray-600 mr-4">
-            <div>
-              Total surveys: <strong>{totalSurveys}</strong>
-            </div>
-            <div>
-              Total responses: <strong>{totalResponses}</strong>
-            </div>
-          </div>
+           <div className="flex flex-col md:flex-row md:items-center md:gap-3 gap-2">
+  <div className="text-sm text-gray-600">
+    <div>Total surveys: <strong>{totalSurveys}</strong></div>
+    <div>Total responses: <strong>{totalResponses}</strong></div>
+  </div>
 
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-gray-700 mr-2">
-              Tokens balance: <strong>{balance === null ? "—" : `${balance}`}</strong>
-            </div>
-            <Button variant="outline" size="sm" onClick={load}>
-              Refresh All
-            </Button>
-            <Button variant="outline" size="sm" onClick={generateAll}>
-              Generate All
-            </Button>
-          </div>
+  <div className="flex flex-wrap gap-2 md:ml-auto">
+    <div className="text-sm text-gray-700 mr-2">
+      Tokens balance: <strong>{balance === null ? "—" : `${balance}`}</strong>
+    </div>
+    <Button variant="outline" size="sm" onClick={load}>
+      Refresh All
+    </Button>
+    <Button variant="outline" size="sm" onClick={generateAll}>
+      Generate All
+    </Button>
+  </div>
+</div>
+
+        </div>
         </div>
       </div>
 
@@ -275,49 +276,53 @@ export default function Response({ projectId }: ResponsesPageProps) {
                     Estimate: {totalEstimate} tokens
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleSort(survey.id)}
-                      className="flex items-center gap-2"
-                    >
-                      <ArrowUpDown className="w-4 h-4" /> {direction.toUpperCase()}
-                    </Button>
+                  <div className="flex flex-wrap gap-2">
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => toggleSort(survey.id)}
+    className="flex items-center gap-2 flex-shrink-0"
+  >
+    <ArrowUpDown className="w-4 h-4" /> {direction.toUpperCase()}
+  </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => refreshSurvey(survey.id)}
-                      disabled={busy}
-                    >
-                      {busy ? <Loader2 className="animate-spin w-4 h-4" /> : "Refresh"}
-                    </Button>
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={() => refreshSurvey(survey.id)}
+    disabled={busy}
+    className="flex-shrink-0"
+  >
+    {busy ? <Loader2 className="animate-spin w-4 h-4" /> : "Refresh"}
+  </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => generateSummary(survey.id)}
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : "Generate AI Summary"}
-                    </Button>
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={() => generateSummary(survey.id)}
+    disabled={isGenerating}
+    className="flex-shrink-0 w-full md:w-auto"
+  >
+    {isGenerating ? <Loader2 className="animate-spin w-4 h-4" /> : "Generate AI Summary"}
+  </Button>
 
-                    {list.length > 0 && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteAll(survey.id)}
-                        disabled={busy}
-                      >
-                        {busy ? <Loader2 className="animate-spin w-4 h-4" /> : (
-                          <>
-                            <Trash2 className="w-4 h-4" /> Delete All
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
+  {list.length > 0 && (
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={() => deleteAll(survey.id)}
+      disabled={busy}
+      className="flex-shrink-0"
+    >
+      {busy ? <Loader2 className="animate-spin w-4 h-4" /> : (
+        <>
+          <Trash2 className="w-4 h-4" /> Delete All
+        </>
+      )}
+    </Button>
+  )}
+</div>
+
                 </div>
               </div>
             </CardHeader>
