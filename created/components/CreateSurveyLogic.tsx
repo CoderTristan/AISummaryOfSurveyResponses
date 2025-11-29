@@ -59,109 +59,216 @@ export function useCreateSurveyLogic() {
 
   // --- HTML widget generator ---
   const generateWidgetCode = (id: string, q: string, t: typeof type, opts: string[]) => {
-    const escapeHtml = (s: string) =>
-      String(s)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+  const escapeHtml = (s: string) =>
+    String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
 
-    const buttonStyle = `border:2px solid ${themeColor}; border-radius:.5rem; padding:.75rem 1rem; font-weight:600; cursor:pointer; transition:0.15s; background:white;`;
-    const hover = `this.style.background='${themeColor}'; this.style.color='white';`;
-    const reset = `this.style.background='white'; this.style.color='${themeColor}';`;
+  // safe inline button style
+  const btn = `
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 2px solid ${themeColor};
+    background: white;
+    color: ${themeColor};
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  `;
 
-    const renderOptionsHtml = () => {
-      if (t === "yesno") {
-        return `
-          <div style="display:flex;gap:8px;justify-content:center;">
-            <button style="${buttonStyle}" onmouseover="${hover}" onmouseout="${reset}" data-value="yes">Yes</button>
-            <button style="${buttonStyle}" onmouseover="${hover}" onmouseout="${reset}" data-value="no">No</button>
-          </div>`;
-      }
+  // hover effect JS (compatible for all CMS)
+  const hoverJS = `
+    this.style.background='${themeColor}';
+    this.style.color='white';
+    this.style.transform='translateY(-2px)';
+    this.style.boxShadow='0 4px 12px #0002';
+  `;
 
-      if (t === "multiple" && opts.length) {
-        return `
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            ${opts
-              .map(
-                (o) =>
-                  `<button style="${buttonStyle}" onmouseover="${hover}" onmouseout="${reset}" data-value="${escapeHtml(
-                    o
-                  )}">${escapeHtml(o)}</button>`
-              )
-              .join("")}
-          </div>`;
-      }
+  const leaveJS = `
+    this.style.background='white';
+    this.style.color='${themeColor}';
+    this.style.transform='translateY(0)';
+    this.style.boxShadow='none';
+  `;
 
-      if (t === "rating") {
-        return `
-          <div style="display:flex;gap:8px;justify-content:center;">
-            ${[1, 2, 3, 4, 5]
-              .map(
-                (n) =>
-                  `<button style="${buttonStyle}" onmouseover="${hover}" onmouseout="${reset}" data-value="${n}">${n}</button>`
-              )
-              .join("")}
-          </div>`;
-      }
+  const renderOptionsHtml = () => {
+    if (t === "yesno") {
+      return `
+        <div style="display:grid; gap:0.5rem;">
+          <button style="${btn}" onmouseover="${hoverJS}" onmouseout="${leaveJS}" data-value="yes">Yes</button>
+          <button style="${btn}" onmouseover="${hoverJS}" onmouseout="${leaveJS}" data-value="no">No</button>
+        </div>
+      `;
+    }
 
-      if (t === "emoji") {
-        const emojis = ["😡", "😕", "😐", "🙂", "🤩"];
-        return `
-          <div style="display:flex;gap:8px;justify-content:center;">
-            ${emojis
-              .map(
-                (e) =>
-                  `<button style="${buttonStyle}" onmouseover="${hover}" onmouseout="${reset}" data-value="${encodeURIComponent(
-                    e
-                  )}">${e}</button>`
-              )
-              .join("")}
-          </div>`;
-      }
+    if (t === "multiple" && opts.length) {
+      return `
+        <div style="display:grid; gap:0.5rem;">
+          ${opts
+            .map(
+              (o) => `
+            <button style="${btn}" 
+              onmouseover="${hoverJS}" 
+              onmouseout="${leaveJS}" 
+              data-value="${escapeHtml(o)}"
+            >${escapeHtml(o)}</button>`
+            )
+            .join("")}
+        </div>
+      `;
+    }
 
-      return `<textarea style="width:100%; padding:.75rem; border:2px solid ${themeColor}; border-radius:.5rem;" placeholder="Type your answer…"></textarea>`;
-    };
+    if (t === "rating") {
+      return `
+        <div style="display:flex; gap:0.5rem; justify-content:center;">
+          ${[1, 2, 3, 4, 5]
+            .map(
+              (n) => `
+            <button
+              style="padding:0.5rem 0.75rem; border-radius:0.5rem; border:2px solid ${themeColor};
+                background:white; color:${themeColor}; cursor:pointer; transition:0.15s;"
+              onmouseover="${hoverJS}"
+              onmouseout="${leaveJS}"
+              data-value="${n}"
+            >${n}</button>`
+            )
+            .join("")}
+        </div>
+      `;
+    }
 
+    if (t === "emoji") {
+      const emojis = ["😡", "😕", "😐", "🙂", "🤩"];
+      return `
+        <div style="display:flex; gap:0.4rem; justify-content:center; font-size:1.8rem;">
+          ${emojis
+            .map(
+              (e) => `
+            <button
+              style="padding:0.5rem; border-radius:0.5rem;
+                border:2px solid ${themeColor}; background:white;
+                cursor:pointer; transition:0.15s;"
+              onmouseover="${hoverJS}"
+              onmouseout="${leaveJS}"
+              data-value="${encodeURIComponent(e)}"
+            >${e}</button>`
+            )
+            .join("")}
+        </div>
+      `;
+    }
+
+    // text input
     return `
-<div id="oneq-${id}" style="font-family:Inter; background:white; border-radius:1rem; border:2px solid ${themeColor}33; max-width:400px; margin:auto; padding:2rem; display:flex; flex-direction:column; gap:1rem; text-align:center;">
-  <div style="font-weight:600; font-size:1.25rem;">${escapeHtml(q)}</div>
+      <textarea
+        style="
+          width:100%;
+          padding:0.75rem 1rem;
+          border-radius:0.5rem;
+          border:2px solid ${themeColor};
+          resize:none;
+          min-height:100px;
+        "
+        placeholder="Type your answer..."
+      ></textarea>
+    `;
+  };
+
+  return `
+<div id="oneq-${id}" style="
+  font-family: Inter, system-ui, sans-serif;
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid ${themeColor}33;
+  max-width: 420px;
+  margin: 1rem auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  text-align: center;
+  box-shadow: 0 4px 20px #00000010;
+">
+  <div style="font-size:1.25rem; font-weight:600; color:#111827;">
+    ${escapeHtml(q)}
+  </div>
+
   ${renderOptionsHtml()}
-  <button id="oneq-submit" style="background:${themeColor}; color:white; border:none; border-radius:.5rem; padding:.75rem 1rem; font-weight:600; cursor:pointer;">Submit</button>
-  <div id="oneq-thanks" style="font-size:.75rem; color:#6b7280; margin-top:.5rem; display:none;">Thanks for responding!</div>
+
+  <button id="oneq-submit" style="
+    background:${themeColor};
+    color:white;
+    border:none;
+    border-radius:0.75rem;
+    padding:0.75rem 1rem;
+    font-weight:600;
+    cursor:pointer;
+    width:100%;
+    transition:0.15s;
+  "
+  onmouseover="this.style.opacity='0.9'"
+  onmouseout="this.style.opacity='1'"
+  >Submit</button>
+
+  <div id="oneq-thanks" style="
+    display:none;
+    font-size:0.875rem;
+    color:#6b7280;
+    margin-top:0.5rem;
+  ">Thanks for responding!</div>
 </div>
 
 <script>
 (function(){
-  const c = document.getElementById('oneq-${id}');
-  let ans = null;
+  var root = document.getElementById('oneq-${id}');
+  if(!root) return;
 
-  c.querySelectorAll('button[data-value]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      ans = btn.getAttribute('data-value');
-      c.querySelectorAll('button[data-value]').forEach(b => {
-        b.style.background='white'; b.style.color='${themeColor}';
+  var answer = null;
+
+  // option buttons
+  root.querySelectorAll('button[data-value]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      answer = btn.getAttribute('data-value');
+
+      root.querySelectorAll('button[data-value]').forEach(function(b){
+        b.style.background = 'white';
+        b.style.color = '${themeColor}';
       });
-      btn.style.background='${themeColor}'; btn.style.color='white';
+
+      btn.style.background = '${themeColor}';
+      btn.style.color = 'white';
     });
   });
 
-  const txt = c.querySelector('textarea');
+  // text input
+  var txt = root.querySelector('textarea');
   if(txt){
-    txt.addEventListener('input', e => ans = txt.value);
+    txt.addEventListener('input', function(){
+      answer = txt.value;
+    });
   }
 
-  c.querySelector('#oneq-submit').addEventListener('click', async () => {
-    if(!ans) return;
-    await fetch('${baseUrl}/api/surveys/${id}/responses', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({answer:ans})
+  // submit
+  root.querySelector('#oneq-submit').addEventListener('click', function(){
+    if(!answer) return;
+
+    fetch('${baseUrl}/api/surveys/${id}/responses', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({answer: answer})
+    }).then(function(){
+      root.querySelector('#oneq-thanks').style.display = 'block';
     });
-    c.querySelector('#oneq-thanks').style.display='block';
   });
 })();
-</script>`;
-  };
+</script>
+`;
+};
+
 
   const generateLivePreview = () => {
     if (!question.trim()) return "";
