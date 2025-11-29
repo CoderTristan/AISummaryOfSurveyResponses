@@ -1,4 +1,4 @@
-import CreateSurvey from "@/components/Create";
+import CreateSurvey from "@/components/CreateSurvey"
 
 export default function CreatePage() {
   return (
