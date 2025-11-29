@@ -173,7 +173,7 @@ export default function CreateSurveyUI(props: any) {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[400px,1fr] gap-6">
-          
+
           {/* LEFT — FORM */}
           <div className="space-y-4">
             <Button
@@ -258,7 +258,7 @@ export default function CreateSurveyUI(props: any) {
 
           {/* RIGHT — PREVIEW + TABS */}
           <div className="lg:sticky lg:top-6 space-y-4">
-            
+
             {/* LIVE PREVIEW */}
             <Card className="border-2 shadow-xl">
               <CardContent className="p-12">
