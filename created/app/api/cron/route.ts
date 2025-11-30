@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const { data: projects, error } = await supabaseAdmin
     .from("projects")
-    .select("id, user_id, report_frequency, notify_enabled, last_notified_at");
+    .select("id, user_id, report_frequency, notify_enabled, last_notified_at, notify_email");
 
   if (error) {
     console.error("Failed to fetch projects:", error);
@@ -36,19 +36,8 @@ console.log("Surveyserror:", surverror);
     }));
     console.log(formatted)
 
-
-    const { data: user } = await supabaseAdmin
-      .from("users")
-      .select("email")
-      .eq("id", project.user_id)
-      .single();
-    console.log(user)
-    
-
-    if (!user?.email) continue;
-
     await sendFrequencyEmail({
-      to: user.email,
+      to: project.notify_email,
       frequency: project.report_frequency,
       surveys: formatted,
     });
