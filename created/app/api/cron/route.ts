@@ -27,7 +27,7 @@ export async function GET() {
 
     const { data: surveys, error: surverror } = await supabase
       .from("surveys")
-      .select("question, responses_count")
+      .select("question, response_count")
       .eq("project_id", project.id);
 console.log("Surveys:", surveys);
 console.log("Surveyserror:", surverror);
@@ -35,7 +35,7 @@ console.log("Surveyserror:", surverror);
 
     const formatted = surveys?.map((s: any) => ({
       question: s.question,
-      currentCount: s.responses_count ?? 0,
+      currentCount: s.response_count ?? 0,
     }));
     console.log(formatted)
 
