@@ -2,13 +2,10 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendFrequencyEmail } from "@/lib/email";
 import { shouldSendEmail } from "@/lib/shouldSendEmail";
-import { createSupaClient } from "@/lib/supabaseClient";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const supabase = createSupaClient()
-
   const { data: projects, error } = await supabaseAdmin
     .from("projects")
     .select("id, user_id, report_frequency, notify_enabled, last_notified_at");
@@ -25,7 +22,7 @@ export async function GET() {
     const shouldSend = shouldSendEmail(project);
     if (!shouldSend) continue;
 
-    const { data: surveys, error: surverror } = await supabase
+    const { data: surveys, error: surverror } = await supabaseAdmin
       .from("surveys")
       .select("question, response_count")
       .eq("project_id", project.id);
@@ -40,7 +37,7 @@ console.log("Surveyserror:", surverror);
     console.log(formatted)
 
 
-    const { data: user } = await supabase
+    const { data: user } = await supabaseAdmin
       .from("users")
       .select("email")
       .eq("id", project.user_id)
@@ -56,7 +53,7 @@ console.log("Surveyserror:", surverror);
       surveys: formatted,
     });
 
-    await supabase
+    await supabaseAdmin
       .from("projects")
       .update({ last_notified_at: new Date().toISOString() })
       .eq("id", project.id);
