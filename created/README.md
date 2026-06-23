@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+#AI Survey Response Analyzer
+Cloud-native survey tool and feedback analyzer built with Next.js, TypeScript,Stripe, Clerk, PostHog, and Sentry. 
+Designed to collect user responses directly from websites and automaticallygenerate clear, action-oriented summaries using integrated AI analysis.Processes user feedback through automated data pipelines including structured
+response aggregation, sentiment evaluation, and AI-driven summarization.
+User authentication is managed safely via Clerk, monetization is handled via
+Stripe billing pipelines, and the entire platform is deployed to Vercel.
+---
+##Features
+- AI-powered automated response summarization
+- Dynamic, customizable survey creation and deployment
+- Complete user authentication and session sync via Clerk
+- Tiered web-billing and subscription management via Stripe
+- Full telemetry and user event tracking using PostHogComprehensive exception tracking and monitoring with Sentry
+- Scalable, API-first route handling architecture
+---
+##Architecture
+```text
+Client (Browser)
+   │
+   ▼
+Next.js App Router (Vercel)
+   │
+   ├── Core Components & Custom UI (Tailwind)
+   │
+   ├── Clerk (Auth & Webhook Processing)
+   │
+   ├── Stripe (Subscription Billing Webhooks)
+   │
+   └── Analytics & Telemetry (PostHog & Sentry)
 ```
+---
+##Engineering Challenges
+- Synced real-time authentication records securely via Clerk backend webhooks
+- Processed critical asynchronous event streams safely with Stripe webhook verification
+- Dynamic path routing optimization for custom survey asset generation (survey/[surveyId])Normalized dynamic, high-throughput text data to serve reliable, structured AI summaries
+- Configured modular layouts, analytics wrappers, and global error boundaries natively at the edge
+---
+##API Overview
+###Submit Survey Response
+```http
+POST /api/surveys/[surveyId]
+```
+---
+**Authentication:** Clerk Session Token
+**Content-Type:** application/json
+Sync Billing State
+```http
+POST /api/stripe/webhooks
+```
+**Authentication:** Stripe Signature HeaderListens to asynchronous invoice events and handles provisioning or de-provisioning user tier states.
+---
+##Architecture App Map
+| Route | Module Description |
+|---------|-------------|
+| `(auth)` | Secure user registration |
+| `authentication` | Session gating |
+| `dashboard` | Core workspace showing overall active metrics, forms, and results |
+| `survey/[surveyId]` | Dynamically targeted consumer-facing interactive data collection points |
+| `api/cron` | Programmatic automated maintenance schedules or summary generation engines |
+---
+##Requirements
+- Node.js (v18.x or newer)
+- npm / yarn / pnpm
+- Clerk Account Credentials
+- Stripe Account Credentials
+---
+##Installation
+###Project Setup
+###Clone the repository and navigate into the folder
+cd AISummaryOfSurveyResponses
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Install the necessary production and development dependencies
+npm install
+Verify the installation:Bashnode --version
+npm --version
+ConfigurationUpdate your root project directory .env.local file:Code snippet# Clerk Keys
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
+CLERK_SECRET_KEY=sk_test_your_clerk_secret_key
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Stripe Keys
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_signing_secret
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### App Environment Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
